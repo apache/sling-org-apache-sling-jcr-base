@@ -57,10 +57,9 @@
                         <Bundle-Category>
                             sling,jcr,jackrabbit
                         </Bundle-Category>
-                        <Provide-Capability>
-                            osgi.service;objectClass=javax.jcr.Repository,
-                            osgi.service;objectClass=org.apache.sling.jcr.api.SlingRepository
-                        </Provide-Capability>
+                        <Provide-Capability><![CDATA[
+                            osgi.service;objectClass:List<String>="javax.jcr.Repository,org.apache.sling.jcr.api.SlingRepository"
+                        ]]></Provide-Capability>
                     </instructions>
                 </configuration>
             </plugin>
