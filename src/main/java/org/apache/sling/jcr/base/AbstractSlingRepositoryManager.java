@@ -85,6 +85,8 @@ import org.slf4j.LoggerFactory;
 @ProviderType
 public abstract class AbstractSlingRepositoryManager {
 
+    private static final AtomicInteger startupCounter = new AtomicInteger();
+
     /** default log */
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -452,7 +454,7 @@ public abstract class AbstractSlingRepositoryManager {
         // start repository asynchronously to allow LoginAdminWhitelist to become available
         // NOTE: making this conditional allows tests to register a mock whitelist before
         // activating the RepositoryManager, so they don't need to deal with async startup
-        startupThread = new Thread("Apache Sling Repository Startup Thread") {
+        startupThread = new Thread("Apache Sling Repository Startup Thread #" + startupCounter.incrementAndGet()) {
             @Override
             public void run() {
                 try {
