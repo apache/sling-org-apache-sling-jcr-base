@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jcr.Repository;
 
@@ -108,6 +109,10 @@ public abstract class AbstractSlingRepositoryManager {
     private volatile ServiceTracker<LoginAdminWhitelist, LoginAdminWhitelist> whitelistTracker;
 
     private final Object repoInitLock = new Object();
+
+    private volatile Thread startupThread;
+
+    private volatile boolean stopRequested;
 
     /**
      * Returns the default workspace, which may be <code>null</code> meaning to
@@ -447,17 +452,20 @@ public abstract class AbstractSlingRepositoryManager {
         // start repository asynchronously to allow LoginAdminWhitelist to become available
         // NOTE: making this conditional allows tests to register a mock whitelist before
         // activating the RepositoryManager, so they don't need to deal with async startup
-        new Thread("Apache Sling Repository Startup Thread") {
+        startupThread = new Thread("Apache Sling Repository Startup Thread") {
             @Override
             public void run() {
                 try {
                     waitForWhitelist.await();
                     initializeAndRegisterRepositoryService();
                 } catch (InterruptedException e) {
-                    throw new RuntimeException("Interrupted while waiting for LoginAdminWhitelist", e);
+                    log.info("Interrupted while waiting for the {} service, cancelling repository initialisation", LoginAdminWhitelist.class.getSimpleName(), e);
+                    Thread.currentThread().interrupt();
+                    return;
                 }
             }
-        }.start();
+        };
+        startupThread.start();
     }
 
     private boolean isRepositoryServiceRegistered() {
@@ -474,6 +482,11 @@ public abstract class AbstractSlingRepositoryManager {
                 // ensure we really have the repository
                 log.debug("start: got a Repository");
                 this.repository = newRepo;
+                if ( stopRequested ) {
+                    log.debug("Stop requested, cancelling initialisation and stopping repository");
+                    stop();
+                    return;
+                }
                 synchronized ( this.repoInitLock ) {
                     this.masterSlingRepository = this.create(this.bundleContext.getBundle());
 
@@ -546,6 +559,18 @@ public abstract class AbstractSlingRepositoryManager {
      * This method must be called if overwritten by implementations !!
      */
     protected final void stop() {
+
+        stopRequested = true;
+        if ( startupThread != null && startupThread != Thread.currentThread() ) {
+            try {
+                startupThread.interrupt();
+                startupThread.join();
+            } catch (InterruptedException e) {
+                log.debug("Interrupted while waiting for the " + startupThread.getName() + " to complete.", e);
+                Thread.currentThread().interrupt();
+            }
+            startupThread = null;
+        }
 
         // ensure the repository is really disposed off
         if (repository != null || isRepositoryServiceRegistered()) {
