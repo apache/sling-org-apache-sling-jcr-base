@@ -23,15 +23,19 @@ import java.lang.reflect.Method;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.jcr.AccessDeniedException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
+import javax.jcr.Value;
+import javax.jcr.ValueFormatException;
 import javax.jcr.security.AccessControlEntry;
 import javax.jcr.security.AccessControlException;
 import javax.jcr.security.AccessControlList;
@@ -41,6 +45,7 @@ import javax.jcr.security.AccessControlPolicyIterator;
 import javax.jcr.security.Privilege;
 
 import org.apache.jackrabbit.api.JackrabbitSession;
+import org.apache.jackrabbit.api.security.JackrabbitAccessControlEntry;
 import org.apache.jackrabbit.api.security.JackrabbitAccessControlList;
 import org.apache.jackrabbit.api.security.principal.PrincipalManager;
 import org.apache.jackrabbit.api.security.user.UserManager;
@@ -69,6 +74,8 @@ public class AccessControlUtil {
     private static final String METHOD_JACKRABBIT_ACL_ADD_ENTRY = "addEntry";
     // the name of the JackrabbitAccessControlEntry method
     private static final String METHOD_JACKRABBIT_ACE_IS_ALLOW = "isAllow";
+    // the name of the JackrabbitAccessControlEntry method
+    private static final String METHOD_JACKRABBIT_ACE_GET_RESTRICTIONS = "getRestrictions";
 
     private static final Logger log = LoggerFactory.getLogger(AccessControlUtil.class);
 
@@ -206,9 +213,66 @@ public class AccessControlUtil {
      */
 	public static boolean addEntry(AccessControlList acl, Principal principal, Privilege privileges[], boolean isAllow, @SuppressWarnings("rawtypes") Map restrictions)
     															throws UnsupportedRepositoryOperationException, RepositoryException {
-    	Object[] args = new Object[] {principal, privileges, isAllow, restrictions};
-    	@SuppressWarnings("rawtypes")
-        Class[] types = new Class[] {Principal.class, Privilege[].class, boolean.class, Map.class};
+		Map<String, Value> restrictionsMap = null;
+		Map<String, Value[]> mvRestrictionsMap = null;
+		if (restrictions != null) {
+			// restrictions arg expected to be Map<String, Value>
+			// mvRestrictions arg expected to be Map<String, Value[]>
+			Set<?> entrySet = ((Map<?, ?>)restrictions).entrySet();
+			for (Object entry : entrySet) {
+				Map.Entry<?, ?> me = (Map.Entry<?, ?>)entry;
+				Object value = me.getValue();
+				if (value != null) {
+					String key = String.valueOf(me.getKey());
+					if (value instanceof Value) {
+						if (restrictionsMap == null) {
+							restrictionsMap = new HashMap<>();
+						}
+						restrictionsMap.put(key, (Value)value);
+					} else if (value instanceof Value[]) {
+						if (mvRestrictionsMap == null) {
+							mvRestrictionsMap = new HashMap<>();
+						}
+						mvRestrictionsMap.put(key, (Value[])value);
+					} else {
+						//some other data type?
+						throw new IllegalArgumentException("the values in the restrictions argument must be either a Value or Value[] object");
+					}
+				}
+			}
+		}
+		
+		return addEntry(acl, principal, privileges, isAllow, restrictionsMap, mvRestrictionsMap);
+    }
+
+    /**
+     * Adds an access control entry to the acl consisting of the specified
+     * <code>principal</code>, the specified <code>privileges</code>, the
+     * <code>isAllow</code> flag and an optional map containing additional
+     * restrictions.
+     * <p/>
+     * This method returns <code>true</code> if this policy was modified,
+     * <code>false</code> otherwise.
+     */
+	public static boolean addEntry(AccessControlList acl, Principal principal, Privilege privileges[], boolean isAllow, 
+			Map<String, Value> restrictions, Map<String, Value[]> mvRestrictions)
+    															throws UnsupportedRepositoryOperationException, RepositoryException {
+		Object[] args = null;
+		Class<?>[] types = null;
+		if (mvRestrictions == null && restrictions == null) {
+			//no restrictions specified
+			args = new Object[] {principal, privileges, isAllow};
+			types = new Class[] {Principal.class, Privilege[].class, boolean.class};
+		} else if (mvRestrictions == null) {
+			//only single-value restrictions (valid with jackrabbit-api version 2.0.0 or later)
+			args = new Object[] {principal, privileges, isAllow, restrictions};
+			types = new Class[] {Principal.class, Privilege[].class, boolean.class, Map.class};
+		} else {
+			//both single-value and multi-value restrictions (valid with jackrabbit-api version 2.8.0 or later)_
+			args = new Object[] {principal, privileges, isAllow, restrictions, mvRestrictions};
+			types = new Class[] {Principal.class, Privilege[].class, boolean.class, Map.class, Map.class};
+		}
+		
 		return safeInvokeRepoMethod(acl, METHOD_JACKRABBIT_ACL_ADD_ENTRY, Boolean.class, args, types);
     }
 
@@ -274,12 +338,78 @@ public class AccessControlUtil {
     			String[] grantedPrivilegeNames, String[] deniedPrivilegeNames, String[] removedPrivilegeNames,
     			String order)
         		throws RepositoryException {
+    	replaceAccessControlEntry(session, resourcePath, principal, grantedPrivilegeNames, deniedPrivilegeNames, removedPrivilegeNames, order, null, null, null);
+    }
+    
+    /**
+     * Replaces existing access control entries in the ACL for the specified
+     * <code>principal</code> and <code>resourcePath</code>. Any existing granted
+     * or denied privileges which do not conflict with the specified privileges
+     * are maintained. Where conflicts exist, existing privileges are dropped.
+     * The end result will be at most two ACEs for the principal: one for grants
+     * and one for denies. Aggregate privileges are disaggregated before checking
+     * for conflicts.
+     * @param session
+     * @param resourcePath
+     * @param principal
+     * @param grantedPrivilegeNames
+     * @param deniedPrivilegeNames
+     * @param removedPrivilegeNames privileges which, if they exist, should be
+     * removed for this principal and resource
+     * @param order where the access control entry should go in the list.
+     *         Value should be one of these:
+     *         <table>
+     *          <tr><td>null</td><td>If the ACE for the principal doesn't exist add at the end, otherwise leave the ACE at it's current position.</td></tr>
+     * 			<tr><td>first</td><td>Place the target ACE as the first amongst its siblings</td></tr>
+	 *			<tr><td>last</td><td>Place the target ACE as the last amongst its siblings</td></tr>
+	 * 			<tr><td>before xyz</td><td>Place the target ACE immediately before the sibling whose name is xyz</td></tr>
+	 * 			<tr><td>after xyz</td><td>Place the target ACE immediately after the sibling whose name is xyz</td></tr>
+	 * 			<tr><td>numeric</td><td>Place the target ACE at the specified numeric index</td></tr>
+	 *         </table>
+     * @param restrictions A map of additional restrictions used to narrow the
+     * effect of the entry to be created.
+     * @param removedRestrictionNames optional set of restriction names that should be removed (if they already exist).
+     * @throws RepositoryException
+     */
+    public static void replaceAccessControlEntry(Session session, String resourcePath, Principal principal,
+    			String[] grantedPrivilegeNames, String[] deniedPrivilegeNames, String[] removedPrivilegeNames,
+    			String order,
+    			Map<String, Value> restrictions,
+    			Map<String, Value[]> mvRestrictions,
+    			Set<String> removedRestrictionNames)
+        		throws RepositoryException {
     	AccessControlManager accessControlManager = getAccessControlManager(session);
     	Set<String> specifiedPrivilegeNames = new HashSet<String>();
     	Set<String> newGrantedPrivilegeNames = disaggregateToPrivilegeNames(accessControlManager, grantedPrivilegeNames, specifiedPrivilegeNames);
     	Set<String> newDeniedPrivilegeNames = disaggregateToPrivilegeNames(accessControlManager, deniedPrivilegeNames, specifiedPrivilegeNames);
     	disaggregateToPrivilegeNames(accessControlManager, removedPrivilegeNames, specifiedPrivilegeNames);
 
+    	//make a copy since we may need to merge and change the map before applying them
+    	Map<String, Value> newRestrictions = new HashMap<>();
+    	Map<String, Value[]> newMvRestrictions = new HashMap<>();
+    	if (restrictions != null) {
+    		Set<Entry<String, Value>> entrySet = restrictions.entrySet();
+    		for (Entry<String, Value> entry : entrySet) {
+				String key = entry.getKey();
+				if (removedRestrictionNames != null && removedRestrictionNames.contains(key)) {
+					// new restriction is also in the removed set, so no need to try to remove it
+					removedRestrictionNames.remove(key);
+				}
+				newRestrictions.put(key, entry.getValue());
+			}
+    	}
+    	if (mvRestrictions != null) {
+    		Set<Entry<String, Value[]>> entrySet = mvRestrictions.entrySet();
+    		for (Entry<String, Value[]> entry : entrySet) {
+				String key = entry.getKey();
+				if (removedRestrictionNames != null && removedRestrictionNames.contains(key)) {
+					// new restriction is also in the removed set, so no need to try to remove it
+					removedRestrictionNames.remove(key);
+				}
+				newMvRestrictions.put(key, entry.getValue());
+			}
+    	}
+    	
     	// Get or create the ACL for the node.
     	AccessControlList acl = null;
     	AccessControlPolicy[] policies = accessControlManager.getPolicies(resourcePath);
@@ -349,9 +479,50 @@ public class AccessControlUtil {
     					}
     				}
     			}
+    			
+				// If there is any existing restrictions that are not specified with the newly specified arguments, 
+    			// then maintain the original restriction values as they were.
+    			if (ace instanceof JackrabbitAccessControlEntry) {
+    				JackrabbitAccessControlEntry jace = (JackrabbitAccessControlEntry)ace;
+					String[] restrictionNames = jace.getRestrictionNames();
+					if (restrictionNames != null) {
+						for (String rname : restrictionNames) {
+							if (!(newRestrictions.containsKey(rname) || newMvRestrictions.containsKey(rname))) {
+								// the restriction doesn't have a new value, so remember the old value
+								try {
+									Value restriction = jace.getRestriction(rname);
+									newRestrictions.put(rname, restriction);
+								} catch (Exception vfe) {
+									if (vfe instanceof ValueFormatException) {
+										//try multival variant (only valid for jackrabbit-api 2.8.0 or later)
+										Value[] rvalue = safeInvokeRepoMethod(ace, METHOD_JACKRABBIT_ACE_GET_RESTRICTIONS, Value[].class, 
+												new Object[] {rname}, new Class[] {String.class});
+										newMvRestrictions.put(rname, rvalue);
+									} else {
+										//some other exception, so just re-throw the original
+										throw vfe;
+									}
+								}
+							} 
+						}
+					}
+    			}
     			// Remove the old ACE.
     			acl.removeAccessControlEntry(ace);
     		}
+    	}
+    	
+    	//remove the map entry for any restrictions were requested to be removed and no new value was
+    	// supplied
+    	if (removedRestrictionNames != null) {
+			for (String rname : removedRestrictionNames) {
+				// remove if a new value was not also supplied
+				if (!((restrictions != null && restrictions.containsKey(rname)) ||
+					  (mvRestrictions != null && mvRestrictions.containsKey(rname)))) {
+					newRestrictions.remove(rname);
+					newMvRestrictions.remove(rname);
+				}
+			}
     	}
 
     	//add a fresh ACE with the granted privileges
@@ -361,9 +532,10 @@ public class AccessControlUtil {
     		grantedPrivilegeList.add(privilege);
     	}
     	if (grantedPrivilegeList.size() > 0) {
-    		acl.addAccessControlEntry(principal, grantedPrivilegeList.toArray(new Privilege[grantedPrivilegeList.size()]));
+   			addEntry(acl, principal, grantedPrivilegeList.toArray(new Privilege[grantedPrivilegeList.size()]), true, 
+   					newRestrictions, newMvRestrictions);
     	}
-
+    	
    		//add a fresh ACE with the denied privileges
    		List<Privilege> deniedPrivilegeList = new ArrayList<Privilege>();
    		for (String name : newDeniedPrivilegeNames) {
@@ -371,7 +543,8 @@ public class AccessControlUtil {
    			deniedPrivilegeList.add(privilege);
    		}
    		if (deniedPrivilegeList.size() > 0) {
-   			addEntry(acl, principal, deniedPrivilegeList.toArray(new Privilege[deniedPrivilegeList.size()]), false);
+   			addEntry(acl, principal, deniedPrivilegeList.toArray(new Privilege[deniedPrivilegeList.size()]), false, 
+   					newRestrictions, newMvRestrictions);
    		}
 
 
