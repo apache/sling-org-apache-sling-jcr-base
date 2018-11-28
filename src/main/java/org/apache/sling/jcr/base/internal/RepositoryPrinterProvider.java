@@ -25,13 +25,13 @@ import java.util.Map;
 
 import javax.jcr.Repository;
 
-import org.apache.felix.scr.annotations.Component;
-import org.apache.felix.scr.annotations.Reference;
-import org.apache.felix.scr.annotations.ReferenceCardinality;
-import org.apache.felix.scr.annotations.ReferencePolicy;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceRegistration;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.component.annotations.ReferenceCardinality;
+import org.osgi.service.component.annotations.ReferencePolicy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,17 +39,18 @@ import org.slf4j.LoggerFactory;
  * The repository provider listens for javax.jcr.Repository services and
  * registers a web console plugin
  */
-@Component(specVersion="1.1")
-@Reference(name="repository",
-           referenceInterface=Repository.class,
-            policy=ReferencePolicy.DYNAMIC,
-            cardinality=ReferenceCardinality.OPTIONAL_MULTIPLE)
+@Component(
+        property = {
+                Constants.SERVICE_DESCRIPTION + "=Apache Sling Repository Printer",
+                Constants.SERVICE_VENDOR + "=The Apache Software Foundation"
+        }
+)
 public class RepositoryPrinterProvider {
 
     /** The logger. */
     private final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    private final Map<Long, ServiceRegistration> registrations = new HashMap<Long, ServiceRegistration>();
+    private final Map<Long, ServiceRegistration<RepositoryPrinter>> registrations = new HashMap<>();
 
     private BundleContext bundleContext;
 
@@ -86,7 +87,7 @@ public class RepositoryPrinterProvider {
         logger.info("Providing new configuration printer for {} : {}", repo, props);
         final Long key = (Long)props.get(Constants.SERVICE_ID);
         final RepositoryPrinter printer = new RepositoryPrinter(repo, props);
-        final ServiceRegistration reg = processContext.registerService(RepositoryPrinter.class.getName(),
+        final ServiceRegistration<RepositoryPrinter> reg = processContext.registerService(RepositoryPrinter.class,
                 printer, printer.getProperties());
         synchronized ( this.registrations ) {
             this.registrations.put(key, reg);
@@ -96,6 +97,7 @@ public class RepositoryPrinterProvider {
     /**
      * Bind a new repository.
      */
+    @Reference(policy=ReferencePolicy.DYNAMIC, cardinality=ReferenceCardinality.MULTIPLE)
     protected void bindRepository(final Repository repo, final Map<String, Object> props) {
         final BundleContext processContext;
         synchronized ( pendingServices ) {
@@ -117,7 +119,7 @@ public class RepositoryPrinterProvider {
             this.pendingServices.remove(new PendingService(repo, props));
         }
         final Long key = (Long)props.get(Constants.SERVICE_ID);
-        final ServiceRegistration reg;
+        final ServiceRegistration<RepositoryPrinter> reg;
         synchronized ( this.registrations ) {
             reg = this.registrations.remove(key);
         }
