@@ -48,22 +48,20 @@ import org.slf4j.LoggerFactory;
  * {@link #loginAdministrative(String)} out in favor of
  * {@link #loginService(String, String)}) which provides default support for
  * attached repositories.
- * <p>
+ * 
  * Implementations of the <code>SlingRepository</code> interface may wish to
  * extend this class to benefit from default implementations of most methods.
- * <p/>
+ * 
  * To be able to know the calling bundle to implement the
  * {@link #loginService(String, String)} method the bundle using the repository
  * service has to be provided in the
  * {@link #AbstractSlingRepository2(AbstractSlingRepositoryManager, Bundle)
  * constructor}.
- * <p>
+ * 
  * The premise of this abstract class is that an instance of an implementation
  * of this abstract class is handed out to each consumer of the
  * {@code SlingRepository} service. Each instance is generally based on the same
- * {@link #getRepository() delegated repository} instance and also makes use of
- * a single system wide {@link #getNamespaceAwareSession(Session) namespace
- * session support}.
+ * {@link #getRepository() delegated repository} instance.
  *
  * @see AbstractSlingRepositoryManager
  * @since API version 2.4 (bundle version 2.3)
@@ -215,7 +213,7 @@ public abstract class AbstractSlingRepository2 implements SlingRepository {
      * attributes passed to the repository login.
      *
      * @param servicePrincipalNames The names of the service principals to create the session for
-     * @param workspace The workspace to access or {@code null} to access the {@link #getDefaultWorkspace() default workspace}
+     * @param workspaceName The workspace to access or {@code null} to access the {@link #getDefaultWorkspace() default workspace}
      * @return A new service session
      * @throws RepositoryException If a general error occurs while creating the session.
      */
@@ -256,7 +254,6 @@ public abstract class AbstractSlingRepository2 implements SlingRepository {
      * @throws LoginException If login is not possible
      * @throws RepositoryException If another error occurrs during login
      * @see #login(Credentials, String)
-     * @see #getNamespaceAwareSession(Session)
      */
     @Override
     public Session login() throws LoginException, RepositoryException {
@@ -274,7 +271,6 @@ public abstract class AbstractSlingRepository2 implements SlingRepository {
      * @throws LoginException If login is not possible
      * @throws RepositoryException If another error occurrs during login
      * @see #login(Credentials, String)
-     * @see #getNamespaceAwareSession(Session)
      */
     @Override
     public Session login(final Credentials credentials) throws LoginException, RepositoryException {
@@ -293,7 +289,6 @@ public abstract class AbstractSlingRepository2 implements SlingRepository {
      * @throws LoginException If login is not possible
      * @throws RepositoryException If another error occurrs during login
      * @see #login(Credentials, String)
-     * @see #getNamespaceAwareSession(Session)
      */
     @Override
     public Session login(final String workspace) throws LoginException, NoSuchWorkspaceException, RepositoryException {
@@ -320,7 +315,6 @@ public abstract class AbstractSlingRepository2 implements SlingRepository {
      * @throws NoSuchWorkspaceException if the desired workspace is not
      *             available
      * @throws RepositoryException If another error occurrs during login
-     * @see #getNamespaceAwareSession(Session)
      */
     @Override
     public Session login(Credentials credentials, String workspace)
@@ -357,7 +351,7 @@ public abstract class AbstractSlingRepository2 implements SlingRepository {
     /**
      * Actual implementation of the {@link #loginService(String, String)} method
      * taking into account the bundle calling this method.
-     * <p/>
+     * 
      * This method uses the
      * {@link AbstractSlingRepositoryManager#getServiceUserMapper()
      * ServiceUserMapper} service to map the named service to a user and then
@@ -387,9 +381,9 @@ public abstract class AbstractSlingRepository2 implements SlingRepository {
     }
 
     /**
-     * Default implementation of the {@link #impersonateFromService(Credentials, String, String)}
+     * Default implementation of the {@link #impersonateFromService(String, Credentials, String)}
      * method taking into account the bundle calling this method.
-     * <p/>
+     * 
      * This method uses the
      * {@link AbstractSlingRepositoryManager#getServiceUserMapper()
      * ServiceUserMapper} service to map the named service to a user and then

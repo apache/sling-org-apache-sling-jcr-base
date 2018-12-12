@@ -148,7 +148,7 @@ public class AccessControlUtil {
      *            to be returned. If the session is not a <code>JackrabbitSession</code>
      *            uses reflection to retrive the manager from the repository.
 	 * @return The <code>PrincipalManager</code> of the session.
-	 * @throws AccessDeniedException
+	 * @throws AccessDeniedException If the current user lacks sufficient privileges
 	 * @throws UnsupportedRepositoryOperationException If the session has no
 	 * 				<code>PrincipalManager</code> method or the exception
      *             	thrown by the method.
@@ -170,6 +170,10 @@ public class AccessControlUtil {
 	/**
 	 * Returns the path of the node <code>AccessControlList</code> acl
 	 * has been created for.
+	 * @param acl The acl to get the path for
+	 * @return the path for the acl
+	 * @throws RepositoryException Forwarded from the
+     *             <code>getPath</code> method call.
 	 */
 	public static String getPath(AccessControlList acl) throws RepositoryException {
 			return safeInvokeRepoMethod(acl, METHOD_JACKRABBIT_ACL_GET_PATH, String.class);
@@ -178,6 +182,10 @@ public class AccessControlUtil {
 	/**
 	 * Returns <code>true</code> if <code>AccessControlList</code> acl
 	 * does not yet define any entries.
+	 * @param acl The acl to check
+	 * @return true if the acl is empty, false otherwise
+	 * @throws RepositoryException Forwarded from the
+     *             <code>isEmpty</code> method call.
 	 */
     public static boolean isEmpty(AccessControlList acl) throws RepositoryException {
 		return safeInvokeRepoMethod(acl, METHOD_JACKRABBIT_ACL_IS_EMPTY, Boolean.class);
@@ -185,6 +193,10 @@ public class AccessControlUtil {
 
     /**
      * Returns the number of acl entries or 0 if the acl is empty.
+	 * @param acl The acl to get the size of
+	 * @return the size of the acl
+	 * @throws RepositoryException Forwarded from the
+     *             <code>size</code> method call.
      */
     public static int size(AccessControlList acl) throws RepositoryException {
 		return safeInvokeRepoMethod(acl, METHOD_JACKRABBIT_ACL_SIZE, Integer.class);
@@ -193,6 +205,18 @@ public class AccessControlUtil {
     /**
      * Same as {@link #addEntry(AccessControlList, Principal, Privilege[], boolean, Map)} using
      * some implementation specific restrictions.
+     * 
+     * @param acl the list to add the new entry to
+     * @param principal the principal for the user or group to add the entry for
+     * @param privileges the set of privileges to grant or deny 
+     * @param isAllow try to grant the privileges or false to deny the privileges
+     * 
+     * @return <code>true</code> if this policy was modified,
+     * <code>false</code> otherwise.
+     * 
+     * @throws AccessControlException If any of the given parameter is invalid
+     * or cannot be handled by the implementation.
+     * @throws RepositoryException if any other error occurs.
      */
 	public static boolean addEntry(AccessControlList acl, Principal principal, Privilege privileges[], boolean isAllow)
         							throws AccessControlException, RepositoryException {
@@ -207,9 +231,18 @@ public class AccessControlUtil {
      * <code>principal</code>, the specified <code>privileges</code>, the
      * <code>isAllow</code> flag and an optional map containing additional
      * restrictions.
-     * <p/>
-     * This method returns <code>true</code> if this policy was modified,
+     * 
+     * @param acl the list to add the new entry to
+     * @param principal the principal for the user or group to add the entry for
+     * @param privileges the set of privileges to grant or deny 
+     * @param isAllow try to grant the privileges or false to deny the privileges
+     * @param restrictions (optional) additional restrictions to filter the scope of the added entry.  The value of the map must be a {@link Value} or {@link Value[]}
+     * 
+     * @return <code>true</code> if this policy was modified,
      * <code>false</code> otherwise.
+     * 
+     * @throws UnsupportedRepositoryOperationException if the repository doesn't support adding access control entries
+     * @throws RepositoryException if any other error occurs.
      */
 	public static boolean addEntry(AccessControlList acl, Principal principal, Privilege privileges[], boolean isAllow, @SuppressWarnings("rawtypes") Map restrictions)
     															throws UnsupportedRepositoryOperationException, RepositoryException {
@@ -250,9 +283,18 @@ public class AccessControlUtil {
      * <code>principal</code>, the specified <code>privileges</code>, the
      * <code>isAllow</code> flag and an optional map containing additional
      * restrictions.
-     * <p/>
-     * This method returns <code>true</code> if this policy was modified,
+     * 
+     * @param acl the list to add the new entry to
+     * @param principal the principal for the user or group to add the entry for
+     * @param privileges the set of privileges to grant or deny 
+     * @param isAllow try to grant the privileges or false to deny the privileges
+     * @param restrictions (optional) additional single-value restrictions to filter the scope of the added entry
+     * @param mvRestrictions (optional) additional multi-value restrictions to filter the scope of the added entry
+     * 
+     * @return <code>true</code> if this policy was modified,
      * <code>false</code> otherwise.
+     * @throws UnsupportedRepositoryOperationException if the repository doesn't support adding access control entries
+     * @throws RepositoryException if any other error occurs.
      */
 	public static boolean addEntry(AccessControlList acl, Principal principal, Privilege privileges[], boolean isAllow, 
 			Map<String, Value> restrictions, Map<String, Value[]> mvRestrictions)
@@ -284,14 +326,14 @@ public class AccessControlUtil {
      * The end result will be at most two ACEs for the principal: one for grants
      * and one for denies. Aggregate privileges are disaggregated before checking
      * for conflicts.
-     * @param session
-     * @param resourcePath
-     * @param principal
-     * @param grantedPrivilegeNames
-     * @param deniedPrivilegeNames
+     * @param session the JCR session of the user doing the work
+     * @param resourcePath the path of the resource to replace the entry on
+     * @param principal the principal for the user or group to add the entry for
+     * @param grantedPrivilegeNames the names of the privileges to grant
+     * @param deniedPrivilegeNames the names of the privileges to deny
      * @param removedPrivilegeNames privileges which, if they exist, should be
      * removed for this principal and resource
-     * @throws RepositoryException
+     * @throws RepositoryException if any error occurs.
      * @deprecated use @link {@link #replaceAccessControlEntry(Session, String, Principal, String[], String[], String[], String)} instead.
      */
     @Deprecated
@@ -315,16 +357,17 @@ public class AccessControlUtil {
      * The end result will be at most two ACEs for the principal: one for grants
      * and one for denies. Aggregate privileges are disaggregated before checking
      * for conflicts.
-     * @param session
-     * @param resourcePath
-     * @param principal
-     * @param grantedPrivilegeNames
-     * @param deniedPrivilegeNames
+     * @param session the JCR session of the user doing the work
+     * @param resourcePath the path of the resource to replace the entry on
+     * @param principal the principal for the user or group to add the entry for
+     * @param grantedPrivilegeNames the names of the privileges to grant
+     * @param deniedPrivilegeNames the names of the privileges to deny
      * @param removedPrivilegeNames privileges which, if they exist, should be
      * removed for this principal and resource
      * @param order where the access control entry should go in the list.
      *         Value should be one of these:
      *         <table>
+     *          <caption>Values</caption>
      *          <tr><td>null</td><td>If the ACE for the principal doesn't exist add at the end, otherwise leave the ACE at it's current position.</td></tr>
      * 			<tr><td>first</td><td>Place the target ACE as the first amongst its siblings</td></tr>
 	 *			<tr><td>last</td><td>Place the target ACE as the last amongst its siblings</td></tr>
@@ -332,7 +375,7 @@ public class AccessControlUtil {
 	 * 			<tr><td>after xyz</td><td>Place the target ACE immediately after the sibling whose name is xyz</td></tr>
 	 * 			<tr><td>numeric</td><td>Place the target ACE at the specified numeric index</td></tr>
 	 *         </table>
-     * @throws RepositoryException
+     * @throws RepositoryException if any error occurs.
      */
     public static void replaceAccessControlEntry(Session session, String resourcePath, Principal principal,
     			String[] grantedPrivilegeNames, String[] deniedPrivilegeNames, String[] removedPrivilegeNames,
@@ -349,16 +392,17 @@ public class AccessControlUtil {
      * The end result will be at most two ACEs for the principal: one for grants
      * and one for denies. Aggregate privileges are disaggregated before checking
      * for conflicts.
-     * @param session
-     * @param resourcePath
-     * @param principal
-     * @param grantedPrivilegeNames
-     * @param deniedPrivilegeNames
+     * @param session the JCR session of the user doing the work
+     * @param resourcePath the path of the resource to replace the entry on
+     * @param principal the principal for the user or group to add the entry for
+     * @param grantedPrivilegeNames the names of the privileges to grant
+     * @param deniedPrivilegeNames the names of the privileges to deny
      * @param removedPrivilegeNames privileges which, if they exist, should be
      * removed for this principal and resource
      * @param order where the access control entry should go in the list.
      *         Value should be one of these:
      *         <table>
+     *          <caption>Values</caption>
      *          <tr><td>null</td><td>If the ACE for the principal doesn't exist add at the end, otherwise leave the ACE at it's current position.</td></tr>
      * 			<tr><td>first</td><td>Place the target ACE as the first amongst its siblings</td></tr>
 	 *			<tr><td>last</td><td>Place the target ACE as the last amongst its siblings</td></tr>
@@ -366,10 +410,10 @@ public class AccessControlUtil {
 	 * 			<tr><td>after xyz</td><td>Place the target ACE immediately after the sibling whose name is xyz</td></tr>
 	 * 			<tr><td>numeric</td><td>Place the target ACE at the specified numeric index</td></tr>
 	 *         </table>
-     * @param restrictions A map of additional restrictions used to narrow the
-     * effect of the entry to be created.
+     * @param restrictions (optional) additional single-value restrictions to filter the scope of the replaced entry
+     * @param mvRestrictions (optional) additional multi-value restrictions to filter the scope of the replaced entry
      * @param removedRestrictionNames optional set of restriction names that should be removed (if they already exist).
-     * @throws RepositoryException
+     * @throws RepositoryException if any error occurs.
      */
     public static void replaceAccessControlEntry(Session session, String resourcePath, Principal principal,
     			String[] grantedPrivilegeNames, String[] deniedPrivilegeNames, String[] removedPrivilegeNames,
@@ -572,6 +616,11 @@ public class AccessControlUtil {
     /**
      * Returns true if the AccessControlEntry represents 'allowed' rights or false
      * it it represents 'denied' rights.
+     * 
+     * @param ace the access control entry to check
+     * @return true if the entry represents allowed rights of ralse otherwise
+	 * @throws RepositoryException Forwarded from the
+     *             <code>isAllow</code> method call.
      */
     public static boolean isAllow(AccessControlEntry ace) throws RepositoryException {
 		return safeInvokeRepoMethod(ace, METHOD_JACKRABBIT_ACE_IS_ALLOW, Boolean.class);
@@ -678,6 +727,7 @@ public class AccessControlUtil {
      * @param order where the access control entry should go in the list.
      *         Value should be one of these:
      *         <table>
+     *          <caption>Values</caption>
      * 			<tr><td>first</td><td>Place the target ACE as the first amongst its siblings</td></tr>
 	 *			<tr><td>last</td><td>Place the target ACE as the last amongst its siblings</td></tr>
 	 * 			<tr><td>before xyz</td><td>Place the target ACE immediately before the sibling whose name is xyz</td></tr>

@@ -111,6 +111,8 @@ public class NodeTypeLoader {
      * @param source The <code>InputStream</code> from which the CND file is
      *            read.
      * @return <code>true</code> if registration of all node types succeeded.
+     * @throws IOException if there is an error parsing the input stream
+     * @throws RepositoryException if another error occurs
      */
     public static boolean registerNodeType(Session session, InputStream source)
             throws IOException, RepositoryException {

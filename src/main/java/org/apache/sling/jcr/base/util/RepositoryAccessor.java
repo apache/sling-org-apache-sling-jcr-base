@@ -141,6 +141,7 @@ public class RepositoryAccessor {
      *      jndi://jackrabbit:java.naming.factory.initial=org.SomeClass,java.naming.provider.url=http://foo.com
      * </pre>
      *
+     * @return the repository for the given url
      * @throws NullPointerException If <code>url</code> is <code>null</code>.
      */
     public Repository getRepositoryFromURL(String url) {
@@ -184,6 +185,9 @@ public class RepositoryAccessor {
      * <code>JackrabbitClientAdapterFactory</code> which allows accessing
      * Jackrabbit (or Jackrabbit-based) repositories over RMI. Extensions of
      * this class may overwrite this method to use a different implementation.
+     * 
+     * @return the <code>LocalAdapterFactory</code> used to convert Jackrabbit
+     * JCR RMI remote objects to local JCR API objects.
      */
     protected LocalAdapterFactory getLocalAdapterFactory() {
         return new ClientAdapterFactory();
@@ -199,6 +203,9 @@ public class RepositoryAccessor {
      * {@link #getLocalAdapterFactory()} method. Extensions may overwrite this
      * method to return an extension of the Jackrabbit JCR RMI
      * <code>ClientRepositoryFactory</code> class.
+     * 
+     * @return the <code>ClientRepositoryFactory</code> to access the remote
+     * JCR repository over RMI.
      */
     protected ClientRepositoryFactory getClientRepositoryFactory() {
         return new ClientRepositoryFactory(getLocalAdapterFactory());
