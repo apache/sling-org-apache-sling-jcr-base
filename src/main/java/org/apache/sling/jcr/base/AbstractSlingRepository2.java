@@ -36,6 +36,7 @@ import javax.jcr.Value;
 import javax.security.auth.Subject;
 
 import org.apache.sling.jcr.api.SlingRepository;
+import org.apache.sling.jcr.base.internal.mount.ProxyRepository;
 import org.apache.sling.serviceusermapping.ServiceUserMapper;
 import org.osgi.annotation.versioning.ProviderType;
 import org.osgi.framework.Bundle;
@@ -159,14 +160,22 @@ public abstract class AbstractSlingRepository2 implements SlingRepository {
     private Session createServiceSession(Bundle usingBundle, String subServiceName, String workspaceName) throws RepositoryException {
         final ServiceUserMapper serviceUserMapper = this.getSlingRepositoryManager().getServiceUserMapper();
         if (serviceUserMapper != null) {
+            Session session = null;
             final Iterable<String> principalNames = serviceUserMapper.getServicePrincipalNames(usingBundle, subServiceName);
             if (principalNames != null) {
-                return createServiceSession(principalNames, workspaceName);
+                session = createServiceSession(principalNames, workspaceName);
             }
-
-            final String userName = serviceUserMapper.getServiceUserID(usingBundle, subServiceName);
-            if (userName != null) {
-                return createServiceSession(userName, workspaceName);
+            else
+            {
+                final String userName = serviceUserMapper.getServiceUserID(usingBundle, subServiceName);
+                if (userName != null)
+                {
+                    session = createServiceSession(userName, workspaceName);
+                }
+            }
+            if (session != null) {
+                Repository repository = getRepository();
+                return repository instanceof ProxyRepository ? ((ProxyRepository) repository).wrap(session) : session;
             }
         }
         return null;
@@ -196,7 +205,9 @@ public abstract class AbstractSlingRepository2 implements SlingRepository {
         Session admin = null;
         try {
             admin = this.createAdministrativeSession(workspace);
-            return admin.impersonate(new SimpleCredentials(serviceUserName, new char[0]));
+            Session result = admin.impersonate(new SimpleCredentials(serviceUserName, new char[0]));
+            Repository repository = getRepository();
+            return repository instanceof ProxyRepository ? ((ProxyRepository) repository).wrap(result) : result;
         } finally {
             if (admin != null) {
                 admin.logout();
@@ -445,7 +456,9 @@ public abstract class AbstractSlingRepository2 implements SlingRepository {
         }
 
         logger.debug("SlingRepository.loginAdministrative is deprecated. Please use SlingRepository.loginService.");
-        return createAdministrativeSession(workspace);
+        Session result = createAdministrativeSession(workspace);
+        Repository repository = getRepository();
+        return repository instanceof ProxyRepository ? ((ProxyRepository) repository).wrap(result) : result;
     }
 
     // Remaining Repository service methods all backed by the actual

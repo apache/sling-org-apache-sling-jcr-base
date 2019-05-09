@@ -21,20 +21,27 @@ package org.apache.sling.jcr.base;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Dictionary;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jcr.Repository;
 
+import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.sling.jcr.api.SlingRepository;
 import org.apache.sling.jcr.api.SlingRepositoryInitializer;
 import org.apache.sling.jcr.base.internal.loader.Loader;
 import org.apache.sling.jcr.base.internal.LoginAdminWhitelist;
+import org.apache.sling.jcr.base.internal.mount.ProxyJackrabbitRepository;
+import org.apache.sling.jcr.base.internal.mount.ProxyRepository;
+import org.apache.sling.jcr.base.spi.RepositoryMount;
 import org.apache.sling.serviceusermapping.ServiceUserMapper;
 import org.osgi.annotation.versioning.ProviderType;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceFactory;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
@@ -115,6 +122,8 @@ public abstract class AbstractSlingRepositoryManager {
     private volatile Thread startupThread;
 
     private volatile boolean stopRequested;
+
+    volatile ServiceTracker<RepositoryMount, RepositoryMount> mountTracker;
 
     /**
      * Returns the default workspace, which may be <code>null</code> meaning to
@@ -283,7 +292,30 @@ public abstract class AbstractSlingRepositoryManager {
      * @return The repository
      */
     protected final Repository getRepository() {
-        return repository;
+        ServiceReference<RepositoryMount> ref = mountTracker != null ? mountTracker.getServiceReference() : null;
+
+        Repository mountRepo = (ref != null ? mountTracker.getService(ref) : null);
+        Object mounts = ref != null ? ref.getProperty(RepositoryMount.MOUNT_POINTS_KEY) : null;
+        Set<String> mountPoints = new HashSet<>();
+
+        if (mounts != null) {
+            if (mounts instanceof String[]) {
+                for (String mount : ((String[]) mounts)) {
+                    mountPoints.add(mount);
+                }
+            }
+            else {
+                mountPoints.add(mounts.toString());
+            }
+        }
+        else {
+            mountPoints.add("/content/jcrmount");
+        }
+        return mountRepo != null ?
+            repository instanceof JackrabbitRepository ?
+                new ProxyJackrabbitRepository((JackrabbitRepository) repository, (JackrabbitRepository) mountRepo, mountPoints) :
+                new ProxyRepository(repository, mountRepo, mountPoints) :
+            repository;
     }
 
     /**
@@ -392,6 +424,9 @@ public abstract class AbstractSlingRepositoryManager {
         this.bundleContext = bundleContext;
         this.defaultWorkspace = config.defaultWorkspace;
         this.disableLoginAdministrative = config.disableLoginAdministrative;
+
+        this.mountTracker = new ServiceTracker<>(this.bundleContext, RepositoryMount.class, null);
+        this.mountTracker.open();
 
         this.repoInitializerTracker = new ServiceTracker<SlingRepositoryInitializer, SlingRepositoryInitializerInfo>(bundleContext, SlingRepositoryInitializer.class,
                 new ServiceTrackerCustomizer<SlingRepositoryInitializer, SlingRepositoryInitializerInfo>() {
@@ -574,6 +609,11 @@ public abstract class AbstractSlingRepositoryManager {
             startupThread = null;
         }
 
+        if (this.mountTracker != null) {
+            this.mountTracker.close();
+            this.mountTracker = null;
+        }
+
         // ensure the repository is really disposed off
         if (repository != null || isRepositoryServiceRegistered()) {
             log.info("stop: Repository still running, forcing shutdown");
@@ -604,7 +644,7 @@ public abstract class AbstractSlingRepositoryManager {
                         this.destroy(this.masterSlingRepository);
 
                         try {
-                            disposeRepository(oldRepo);
+                            disposeRepository(oldRepo instanceof  ProxyRepository ? ((ProxyRepository) oldRepo).jcr : oldRepo);
                         } catch (Throwable t) {
                             log.info("stop: Uncaught problem disposing the repository", t);
                         }
