@@ -80,37 +80,38 @@ public class ProxyQuery extends ProxyWrapper<Query> implements Query {
                 @SuppressWarnings({ "unchecked", "rawtypes" })
 				final Iterator<Row> iter = new ChainedIterator(list.iterator());
                 return new RowIterator() {
-					
+					private volatile long position = 0;
 					@Override
 					public Object next() {
-						return iter.next();
+					    position++;
+					    return iter.next();
 					}
-					
+
 					@Override
 					public boolean hasNext() {
 						return iter.hasNext();
 					}
-					
+
 					@Override
 					public void skip(long skipNum) {
-						// TODO Auto-generated method stub
-						
+						while (skipNum-- > 0) {
+						    next();
+						}
 					}
-					
+
 					@Override
 					public long getSize() {
-						// TODO Auto-generated method stub
-						return 0;
+						return -1;
 					}
-					
+
 					@Override
 					public long getPosition() {
-						// TODO Auto-generated method stub
-						return 0;
+						return position;
 					}
-					
+
 					@Override
 					public Row nextRow() {
+						position++;
 						return iter.next();
 					}
 				};
@@ -135,38 +136,39 @@ public class ProxyQuery extends ProxyWrapper<Query> implements Query {
                 @SuppressWarnings({ "unchecked", "rawtypes" })
 				final Iterator<Node> iter = new ChainedIterator(list.iterator());
                 return new NodeIterator() {
-					
+					private volatile long position = 0;
 					@Override
 					public Object next() {
-						return iter.next();
+					    position++;
+					    return iter.next();
 					}
-					
+
 					@Override
 					public boolean hasNext() {
 						return iter.hasNext();
 					}
-					
+
 					@Override
 					public void skip(long skipNum) {
-						// TODO Auto-generated method stub
-						
+						while (skipNum-- > 0) {
+						    next();
+						}
 					}
-					
+
 					@Override
 					public long getSize() {
-						// TODO Auto-generated method stub
-						return 0;
+						return -1;
 					}
-					
+
 					@Override
 					public long getPosition() {
-						// TODO Auto-generated method stub
-						return 0;
+						return position;
 					}
-					
+
 					@Override
 					public Node nextNode() {
-						return iter.next();
+					    position++;
+					    return iter.next();
 					}
 				};
             }
