@@ -164,12 +164,9 @@ public abstract class AbstractSlingRepository2 implements SlingRepository {
             final Iterable<String> principalNames = serviceUserMapper.getServicePrincipalNames(usingBundle, subServiceName);
             if (principalNames != null) {
                 session = createServiceSession(principalNames, workspaceName);
-            }
-            else
-            {
+            } else {
                 final String userName = serviceUserMapper.getServiceUserID(usingBundle, subServiceName);
-                if (userName != null)
-                {
+                if (userName != null) {
                     session = createServiceSession(userName, workspaceName);
                 }
             }
