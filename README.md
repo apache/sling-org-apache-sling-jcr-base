@@ -6,4 +6,22 @@
 
 This module is part of the [Apache Sling](https://sling.apache.org) project.
 
-The JCR base bundle provides JCR utility classes.
+The JCR base bundle provides JCR utility classes and support for repository mounts.
+
+# Repository Mount
+
+Apache Sling provides support for pluggable resource providers. While this allows for a very flexible and efficient
+integration of custom data providers into Sling, this integration is done on Sling's resource API level. Legacy code
+which may rely on being able to adapt a resource into a JCR node and continue with JCR API will not work with such
+a resource provider.
+
+To support legacy code, this bundle provides an SPI interface *org.apache.sling.jcr.base.spi.RepositoryMount* which
+extends *JackrabbitRepository* (and through this *javax.jcr.Repository*). A service registered as *RepositoryMount* registers
+itself with the service registration property *RepositoryMount.MOUNT_POINTS_KEY* which is a String+ property containing
+the paths in the JCR tree where the mount takes over the control of the JCR nodes. The *RepositoryMount* can registered
+at a single path or multiple.
+
+As *RepositoryMount* extends *JackrabbitRepository* the implementation of a mount needs to implement the whole JCR API.
+This is a lot of work compared to a *ResourceProvider*, therefore a *RepositoryMount* should only be used if legacy
+code using JCR API needs to be supported.
+
