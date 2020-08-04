@@ -124,6 +124,10 @@ public abstract class AbstractSlingRepositoryManager {
 
     volatile ServiceTracker<RepositoryMount, RepositoryMount> mountTracker;
 
+    private volatile int startupThreadMaxWaitCount;
+
+    private volatile long startupThreadWaitMillis;
+
     /**
      * Returns the default workspace, which may be <code>null</code> meaning to
      * use the repository provided default workspace.
@@ -385,6 +389,10 @@ public abstract class AbstractSlingRepositoryManager {
         protected final String defaultWorkspace;
 
         protected final boolean disableLoginAdministrative;
+        
+        protected final int startupThreadMaxWaitCount;
+        
+        protected final long startupThreadWaitMillis;
 
         /**
          * @param defaultWorkspace The name of the default workspace to use to
@@ -395,8 +403,29 @@ public abstract class AbstractSlingRepositoryManager {
          *            {@code SlingRepository.loginAdministrative} method or not.
          */
         public Config(String defaultWorkspace, boolean disableLoginAdministrative) {
+            this(defaultWorkspace, disableLoginAdministrative, 5, TimeUnit.MINUTES.toMillis(1));
+        }
+
+        /**
+         * @param defaultWorkspace The name of the default workspace to use to
+         *            login. This may be {@code null} to have the actual repository
+         *            instance define its own default
+         *
+         * @param disableLoginAdministrative Whether to disable the
+         *            {@code SlingRepository.loginAdministrative} method or not.
+         *            
+         * @param startupThreadMaxWaitCount The number of attempts to be performed
+         *            when waiting for the repository startup to complete
+         *            
+         * @param startupThreadWaitMillis The duration of each of the waits performed
+         *            when waiting for the repository startup to complete
+         */
+        public Config(String defaultWorkspace, boolean disableLoginAdministrative, 
+                int startupThreadMaxWaitCount, long startupThreadWaitMillis) {
             this.defaultWorkspace = defaultWorkspace;
             this.disableLoginAdministrative = disableLoginAdministrative;
+            this.startupThreadMaxWaitCount = startupThreadMaxWaitCount;
+            this.startupThreadWaitMillis = startupThreadWaitMillis;
         }
     }
 
@@ -423,6 +452,8 @@ public abstract class AbstractSlingRepositoryManager {
         this.bundleContext = bundleContext;
         this.defaultWorkspace = config.defaultWorkspace;
         this.disableLoginAdministrative = config.disableLoginAdministrative;
+        this.startupThreadMaxWaitCount = config.startupThreadMaxWaitCount;
+        this.startupThreadWaitMillis = config.startupThreadWaitMillis;
 
         this.mountTracker = new ServiceTracker<>(this.bundleContext, RepositoryMount.class, null);
         this.mountTracker.open();
@@ -653,16 +684,12 @@ public abstract class AbstractSlingRepositoryManager {
     }
 
     private void waitForStartupThreadToComplete() {
-        // TODO - instance variables, maybe configurable
-        int maxWaitCount = 5;
-        long waitMillis = TimeUnit.MINUTES.toMillis(1);
-
         try {
             // Oak does play well with interrupted exceptions, so avoid that at all costs
             // https://jackrabbit.apache.org/oak/docs/dos_and_donts.html
-            for ( int i = 0; i < maxWaitCount; i++ ) {
-                log.info("Waiting {} millis for {} to complete, attempt {}/{}.", waitMillis, startupThread.getName(), (i + 1), maxWaitCount);
-                startupThread.join(waitMillis);
+            for ( int i = 0; i < startupThreadMaxWaitCount; i++ ) {
+                log.info("Waiting {} millis for {} to complete, attempt {}/{}.", startupThreadWaitMillis, startupThread.getName(), (i + 1), startupThreadMaxWaitCount);
+                startupThread.join(startupThreadWaitMillis);
                 if ( !startupThread.isAlive() ) {
                     log.info("{} not alive, proceeding", startupThread.getName());
                     break;
@@ -675,7 +702,13 @@ public abstract class AbstractSlingRepositoryManager {
         
         if ( startupThread.isAlive() ) {
             log.warn("Proceeding even though {} is still running, behaviour is undefined.", startupThread.getName());
-            // TODO - log stack trace
+            if ( log.isInfoEnabled() ) {
+                StringBuilder stackTrace = new StringBuilder();
+                stackTrace.append("Stack trace for ").append(startupThread.getName()).append(" :\n");
+                for (StackTraceElement traceElement : startupThread.getStackTrace())
+                    stackTrace.append("\tat ").append(traceElement).append('\n');
+                log.info(stackTrace.toString());
+            }
         }
     }
 
