@@ -93,6 +93,8 @@ public abstract class AbstractSlingRepositoryManager {
 
     private static final AtomicInteger startupCounter = new AtomicInteger();
 
+    private static final String INTERRUPTED_EXCEPTION_NOTE = "Avoid using Thread.interrupt() with Oak! See https://jackrabbit.apache.org/oak/docs/dos_and_donts.html .";
+    
     /** default log */
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -104,7 +106,7 @@ public abstract class AbstractSlingRepositoryManager {
     // see setup and tearDown
     private volatile AbstractSlingRepository2 masterSlingRepository;
 
-    private volatile ServiceRegistration repositoryService;
+    private volatile ServiceRegistration<?> repositoryService;
 
     private volatile String defaultWorkspace;
 
@@ -213,15 +215,15 @@ public abstract class AbstractSlingRepositoryManager {
         final Dictionary<String, Object> props = getServiceRegistrationProperties();
         final String[] interfaces = getServiceRegistrationInterfaces();
 
-        return bundleContext.registerService(interfaces, new ServiceFactory() {
+        return bundleContext.registerService(interfaces, new ServiceFactory<AbstractSlingRepository2>() {
             @Override
-            public Object getService(Bundle bundle, ServiceRegistration registration) {
+            public AbstractSlingRepository2 getService(Bundle bundle, ServiceRegistration<AbstractSlingRepository2> registration) {
                 return AbstractSlingRepositoryManager.this.create(bundle);
             }
 
             @Override
-            public void ungetService(Bundle bundle, ServiceRegistration registration, Object service) {
-                AbstractSlingRepositoryManager.this.destroy((AbstractSlingRepository2) service);
+            public void ungetService(Bundle bundle, ServiceRegistration<AbstractSlingRepository2> registration, AbstractSlingRepository2 service) {
+                AbstractSlingRepositoryManager.this.destroy(service);
             }
         }, props);
     }
@@ -311,7 +313,7 @@ public abstract class AbstractSlingRepositoryManager {
         return mountRepo != null ?
             repository instanceof JackrabbitRepository ?
                 new ProxyJackrabbitRepository((JackrabbitRepository) repository, (JackrabbitRepository) mountRepo, mountPoints) :
-                new ProxyRepository(repository, mountRepo, mountPoints) :
+                new ProxyRepository<>(repository, mountRepo, mountPoints) :
             repository;
     }
 
@@ -493,9 +495,8 @@ public abstract class AbstractSlingRepositoryManager {
                     waitForWhitelist.await();
                     initializeAndRegisterRepositoryService();
                 } catch (InterruptedException e) {
-                    log.info("Interrupted while waiting for the {} service, cancelling repository initialisation", LoginAdminWhitelist.class.getSimpleName(), e);
+                    log.warn("Interrupted while waiting for the {} service, cancelling repository initialisation. {}", LoginAdminWhitelist.class.getSimpleName(), INTERRUPTED_EXCEPTION_NOTE, e);
                     Thread.currentThread().interrupt();
-                    return;
                 }
             }
         };
@@ -603,7 +604,7 @@ public abstract class AbstractSlingRepositoryManager {
                 try {
                     if (isRepositoryServiceRegistered()) {
                         try {
-                            log.debug("stop: Unregistering SlingRepository service, registration=" + repositoryService);
+                            log.debug("stop: Unregistering SlingRepository service, registration={}", repositoryService);
                             unregisterService(repositoryService);
                         } catch (Throwable t) {
                             log.info("stop: Uncaught problem unregistering the repository service", t);
@@ -624,7 +625,7 @@ public abstract class AbstractSlingRepositoryManager {
                         this.destroy(this.masterSlingRepository);
 
                         try {
-                            disposeRepository(oldRepo instanceof  ProxyRepository ? ((ProxyRepository) oldRepo).jcr : oldRepo);
+                            disposeRepository(oldRepo instanceof  ProxyRepository ? ((ProxyRepository<?>) oldRepo).jcr : oldRepo);
                         } catch (Throwable t) {
                             log.info("stop: Uncaught problem disposing the repository", t);
                         }
@@ -668,7 +669,7 @@ public abstract class AbstractSlingRepositoryManager {
                 }
             }
         } catch (InterruptedException e) {
-            log.debug("Interrupted while waiting for the " + startupThread.getName() + " to complete.", e);
+            log.warn("Interrupted while waiting for the {} to complete. {}", startupThread.getName(), INTERRUPTED_EXCEPTION_NOTE, e);
             Thread.currentThread().interrupt();
         }
         
