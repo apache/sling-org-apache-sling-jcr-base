@@ -120,8 +120,6 @@ public abstract class AbstractSlingRepositoryManager {
 
     private volatile Thread startupThread;
 
-    private volatile boolean stopRequested;
-
     volatile ServiceTracker<RepositoryMount, RepositoryMount> mountTracker;
 
     /**
@@ -509,7 +507,6 @@ public abstract class AbstractSlingRepositoryManager {
     }
 
     private void initializeAndRegisterRepositoryService() {
-        Throwable t = null;
         try {
             log.debug("start: calling acquireRepository()");
             Repository newRepo = this.acquireRepository();
@@ -518,11 +515,6 @@ public abstract class AbstractSlingRepositoryManager {
                 // ensure we really have the repository
                 log.debug("start: got a Repository");
                 this.repository = newRepo;
-                if ( stopRequested ) {
-                    log.debug("Stop requested, cancelling initialisation and stopping repository");
-                    stop();
-                    return;
-                }
                 synchronized ( this.repoInitLock ) {
                     this.masterSlingRepository = this.create(this.bundleContext.getBundle());
 
@@ -533,25 +525,21 @@ public abstract class AbstractSlingRepositoryManager {
                     try {
                         executeRepositoryInitializers(this.masterSlingRepository);
                     } catch(Throwable e) {
-                        t = e;
-                        log.error("Exception in a SlingRepositoryInitializer, SlingRepository service registration aborted", t);
+                        log.error("Exception in a SlingRepositoryInitializer, SlingRepository service registration aborted", e);
+                        stop();
+                        return;
                     }
 
                     log.debug("start: calling registerService()");
                     this.repositoryService = registerService();
 
-                    log.debug("start: registerService() successful, registration=" + repositoryService);
+                    log.debug("start: registerService() successful, registration={}", repositoryService);
                 }
             }
         } catch (Throwable e) {
             // consider an uncaught problem an error
             log.error("start: Uncaught Throwable trying to access Repository, calling stopRepository()", e);
-            t = e;
-        } finally {
-            if (t != null) {
-                // repository might be partially started, stop anything left
-                stop();
-            }
+            stop();
         }
     }
 
@@ -595,16 +583,9 @@ public abstract class AbstractSlingRepositoryManager {
      * This method must be called if overwritten by implementations !!
      */
     protected final void stop() {
-
-        stopRequested = true;
-        if ( startupThread != null && startupThread != Thread.currentThread() ) {
-            try {
-                startupThread.interrupt();
-                startupThread.join();
-            } catch (InterruptedException e) {
-                log.debug("Interrupted while waiting for the " + startupThread.getName() + " to complete.", e);
-                Thread.currentThread().interrupt();
-            }
+        log.info("Stop requested");
+        if ( startupThread != Thread.currentThread() ) {
+            waitForStartupThreadToComplete();
             startupThread = null;
         }
 
@@ -668,6 +649,33 @@ public abstract class AbstractSlingRepositoryManager {
         this.repository = null;
         this.defaultWorkspace = null;
         this.bundleContext = null;
+    }
+
+    private void waitForStartupThreadToComplete() {
+        // TODO - instance variables, maybe configurable
+        int maxWaitCount = 5;
+        long waitMillis = TimeUnit.MINUTES.toMillis(1);
+
+        try {
+            // Oak does play well with interrupted exceptions, so avoid that at all costs
+            // https://jackrabbit.apache.org/oak/docs/dos_and_donts.html
+            for ( int i = 0; i < maxWaitCount; i++ ) {
+                log.info("Waiting {} millis for {} to complete, attempt {}/{}.", waitMillis, startupThread.getName(), (i + 1), maxWaitCount);
+                startupThread.join(waitMillis);
+                if ( !startupThread.isAlive() ) {
+                    log.info("{} not alive, proceeding", startupThread.getName());
+                    break;
+                }
+            }
+        } catch (InterruptedException e) {
+            log.debug("Interrupted while waiting for the " + startupThread.getName() + " to complete.", e);
+            Thread.currentThread().interrupt();
+        }
+        
+        if ( startupThread.isAlive() ) {
+            log.warn("Proceeding even though {} is still running, behaviour is undefined.", startupThread.getName());
+            // TODO - log stack trace
+        }
     }
 
     private static final class SlingRepositoryInitializerInfo implements Comparable<SlingRepositoryInitializerInfo> {
