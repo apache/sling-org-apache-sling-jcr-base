@@ -611,9 +611,6 @@ public abstract class AbstractSlingRepositoryManager {
         }
     }
 
-    /**
-     * This method must be called if overwritten by implementations !!
-     */
     protected final void stop() {
         log.info("Stop requested");
         if ( startupThread != null && startupThread != Thread.currentThread() ) {
