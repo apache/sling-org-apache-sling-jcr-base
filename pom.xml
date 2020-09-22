@@ -28,7 +28,7 @@
     </parent>
 
     <artifactId>org.apache.sling.jcr.base</artifactId>
-    <version>3.1.6</version>
+    <version>3.1.7-SNAPSHOT</version>
 
     <name>Apache Sling JCR Base</name>
     <description>
