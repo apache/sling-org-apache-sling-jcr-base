@@ -616,7 +616,7 @@ public abstract class AbstractSlingRepositoryManager {
      */
     protected final void stop() {
         log.info("Stop requested");
-        if ( startupThread != Thread.currentThread() ) {
+        if ( startupThread != null && startupThread != Thread.currentThread() ) {
             waitForStartupThreadToComplete();
             startupThread = null;
         }
