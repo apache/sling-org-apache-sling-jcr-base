@@ -538,6 +538,15 @@ public abstract class AbstractSlingRepositoryManager {
         return repositoryService != null;
     }
 
+    private void repositoryInit(){
+        try {
+            executeRepositoryInitializers(this.masterSlingRepository);
+        } catch(Exception e) {
+            log.error("Exception in a SlingRepositoryInitializer, SlingRepository service registration aborted", e);
+            stop();
+        }
+    }
+
     private void initializeAndRegisterRepositoryService() {
         try {
             log.debug("start: calling acquireRepository()");
@@ -554,13 +563,7 @@ public abstract class AbstractSlingRepositoryManager {
                     this.loader = new Loader(this.masterSlingRepository, this.bundleContext);
 
                     log.debug("start: calling SlingRepositoryInitializer");
-                    try {
-                        executeRepositoryInitializers(this.masterSlingRepository);
-                    } catch(Throwable e) {
-                        log.error("Exception in a SlingRepositoryInitializer, SlingRepository service registration aborted", e);
-                        stop();
-                        return;
-                    }
+                    this.repositoryInit();
 
                     log.debug("start: calling registerService()");
                     this.repositoryService = registerService();
@@ -568,7 +571,7 @@ public abstract class AbstractSlingRepositoryManager {
                     log.debug("start: registerService() successful, registration={}", repositoryService);
                 }
             }
-        } catch (Throwable e) {
+        } catch (Exception e) {
             // consider an uncaught problem an error
             log.error("start: Uncaught Throwable trying to access Repository, calling stop()", e);
             stop();
