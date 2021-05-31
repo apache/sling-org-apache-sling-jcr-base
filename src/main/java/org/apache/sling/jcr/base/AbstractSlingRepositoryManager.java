@@ -570,7 +570,7 @@ public abstract class AbstractSlingRepositoryManager {
             }
         } catch (Throwable e) {
             // consider an uncaught problem an error
-            log.error("start: Uncaught Throwable trying to access Repository, calling stopRepository()", e);
+            log.error("start: Uncaught Throwable trying to access Repository, calling stop()", e);
             stop();
         }
     }
