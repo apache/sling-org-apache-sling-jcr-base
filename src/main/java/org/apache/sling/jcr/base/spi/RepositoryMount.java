@@ -41,7 +41,7 @@ public interface RepositoryMount extends JackrabbitRepository
 {
     /**
      * The key of the attribute holding the parent session when
-     * {@link JackrabbitRepository#login(javax.jcr.Credentials, String, java.util.Map)
+     * {@link JackrabbitRepository#login(javax.jcr.Credentials, String, java.util.Map)}
      * is called.
      */
     String PARENT_SESSION_KEY = "org.apache.sling.jcr.base.RepositoryMount.PARENT_SESSION";
