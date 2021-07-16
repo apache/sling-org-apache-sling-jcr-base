@@ -352,7 +352,7 @@ public abstract class AbstractSlingRepositoryManager {
      * @param message failure details.
      * @param t the exception.
      */
-    protected void initializeAndRegisterRepositoryServiceFailed(String message, Throwable t) {
+    protected void stoppingOnError(String message, Throwable t) {
         log.error(message, t);
     }
 
@@ -574,7 +574,7 @@ public abstract class AbstractSlingRepositoryManager {
                     try {
                         executeRepositoryInitializers(this.masterSlingRepository);
                     } catch(Throwable e) {
-                        initializeAndRegisterRepositoryServiceFailed("Exception in a SlingRepositoryInitializer, SlingRepository service registration aborted", e);
+                        stoppingOnError("Exception in a SlingRepositoryInitializer, SlingRepository service registration aborted", e);
                         stop();
                         return;
                     }
@@ -587,7 +587,7 @@ public abstract class AbstractSlingRepositoryManager {
             }
         } catch (Throwable e) {
             // consider an uncaught problem an error
-            initializeAndRegisterRepositoryServiceFailed("start: Uncaught Throwable trying to access Repository, calling stop()", e);
+            stoppingOnError("start: Uncaught Throwable trying to access Repository, calling stop()", e);
             stop();
         }
     }
