@@ -71,12 +71,12 @@ import org.slf4j.LoggerFactory;
  * Earlier versions of this class had an additional <code>setup</code> method,
  * whatever code was there can be moved to the <code>create</code> method.
  * <p>
- * If starting the repository fails, the method {@link #initializeAndRegisterRepositoryServiceFailed(Throwable)}
+ * If starting the repository fails, the method {@link #stoppingOnError(String, Throwable)}
  * will be called. By default the exception is logged as an error, but this can
  * be customized by overwriting the method.
  * <p>
  * To stop the repository instance, the implementation calls the {@link #stop()}
- * method which goes through the setps of unregistering the OSGi service,
+ * method which goes through the steps of unregistering the OSGi service,
  * tearing all special settings down and finally shutting down the repository:
  * <ol>
  * <li>{@link #unregisterService(ServiceRegistration)}</li>
