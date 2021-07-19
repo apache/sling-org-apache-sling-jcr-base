@@ -71,8 +71,12 @@ import org.slf4j.LoggerFactory;
  * Earlier versions of this class had an additional <code>setup</code> method,
  * whatever code was there can be moved to the <code>create</code> method.
  * <p>
+ * If starting the repository fails, the method {@link #stoppingOnError(String, Throwable)}
+ * will be called. By default the exception is logged as an error, but this can
+ * be customized by overwriting the method.
+ * <p>
  * To stop the repository instance, the implementation calls the {@link #stop()}
- * method which goes through the setps of unregistering the OSGi service,
+ * method which goes through the steps of unregistering the OSGi service,
  * tearing all special settings down and finally shutting down the repository:
  * <ol>
  * <li>{@link #unregisterService(ServiceRegistration)}</li>
@@ -339,6 +343,19 @@ public abstract class AbstractSlingRepositoryManager {
      */
     protected abstract void disposeRepository(Repository repository);
 
+    /**
+     * Called when the repository service cannot be initialized or registered
+     * because an exception occurred.
+     * <p>
+     * This default implementation logs the exception as an error.
+     *
+     * @param message failure details.
+     * @param t the exception.
+     */
+    protected void stoppingOnError(String message, Throwable t) {
+        log.error(message, t);
+    }
+
     // --------- SCR integration -----------------------------------------------
 
     /**
@@ -557,7 +574,7 @@ public abstract class AbstractSlingRepositoryManager {
                     try {
                         executeRepositoryInitializers(this.masterSlingRepository);
                     } catch(Throwable e) {
-                        log.error("Exception in a SlingRepositoryInitializer, SlingRepository service registration aborted", e);
+                        stoppingOnError("Exception in a SlingRepositoryInitializer, SlingRepository service registration aborted", e);
                         stop();
                         return;
                     }
@@ -570,7 +587,7 @@ public abstract class AbstractSlingRepositoryManager {
             }
         } catch (Throwable e) {
             // consider an uncaught problem an error
-            log.error("start: Uncaught Throwable trying to access Repository, calling stop()", e);
+            stoppingOnError("start: Uncaught Throwable trying to access Repository, calling stop()", e);
             stop();
         }
     }

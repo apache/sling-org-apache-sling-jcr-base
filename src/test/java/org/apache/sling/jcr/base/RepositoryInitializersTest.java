@@ -19,9 +19,11 @@
 package org.apache.sling.jcr.base;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Hashtable;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
@@ -37,6 +39,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.Constants;
 import org.osgi.framework.ServiceReference;
 
@@ -150,6 +153,30 @@ public class RepositoryInitializersTest {
         assertStart(false);
         
         // The repository manager does not register a service in this case 
+        assertAdditionalRepositoryServices(0);
+    }
+
+    @Test
+    public void noRepositoryOnRegisterException() {
+        AtomicReference<Throwable> ex = new AtomicReference<>();
+        asrm = new MockSlingRepositoryManager(repository) {
+            @Override
+            protected AbstractSlingRepository2 create(Bundle usingBundle) {
+                throw new RuntimeException("failure");
+            }
+
+            @Override
+            protected void stoppingOnError(String message, Throwable t) {
+                super.stoppingOnError(message, t);
+                ex.set(t);
+            }
+        };
+
+        assertStart(false);
+
+        assertNotNull("Must call stoppingOnError() with exception", ex.get());
+
+        // The repository manager does not register a service in this case
         assertAdditionalRepositoryServices(0);
     }
 }
