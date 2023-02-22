@@ -32,9 +32,9 @@ import java.util.Set;
 import static java.util.Arrays.asList;
 
 @ObjectClassDefinition(
-        name = "Apache Sling Login Admin Whitelist Configuration Fragment",
-        description = "Whitelist configuration fragments contribute a list of whitelisted bundle symbolic " +
-                "names to the Login Admin Whitelist. This allows for modularisation of the whitelist."
+        name = "Apache Sling Login Admin Allowlist Configuration Fragment",
+        description = "Allowlist configuration fragments contribute a list of allowlisted bundle symbolic " +
+                "names to the Login Admin Allowlist. This allows for modularisation of the allowlist."
 )
 @interface Configuration {
 
@@ -42,20 +42,20 @@ import static java.util.Arrays.asList;
             name = "Name",
             description = "Optional name to disambiguate configurations."
     )
-    String whitelist_name() default "[unnamed]";
+    String allowlist_name() default "[unnamed]";
 
     @AttributeDefinition(
             name = "Whitelisted BSNs",
             description = "A list of bundle symbolic names allowed to use loginAdministrative()."
     )
-    String[] whitelist_bundles();
+    String[] allowlist_bundles();
 
     @SuppressWarnings("unused")
-    String webconsole_configurationFactory_nameHint() default "{whitelist.name}: [{whitelist.bundles}]";
+    String webconsole_configurationFactory_nameHint() default "{allowlist.name}: [{allowlist.bundles}]";
 }
 
 @Component(
-        configurationPid = "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment",
+        configurationPid = "org.apache.sling.jcr.base.internal.LoginAdminAllowlist.fragment",
         configurationPolicy = ConfigurationPolicy.REQUIRE,
         service = WhitelistFragment.class
 )
@@ -80,8 +80,8 @@ public class WhitelistFragment {
     @Activate
     @SuppressWarnings("unused")
     void activate(Configuration config) {
-        name = config.whitelist_name();
-        bundles = asSet(config.whitelist_bundles());
+        name = config.allowlist_name();
+        bundles = asSet(config.allowlist_bundles());
     }
 
     boolean allows(String bsn) {

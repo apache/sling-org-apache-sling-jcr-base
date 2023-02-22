@@ -33,7 +33,7 @@ import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.sling.jcr.api.SlingRepository;
 import org.apache.sling.jcr.api.SlingRepositoryInitializer;
 import org.apache.sling.jcr.base.internal.loader.Loader;
-import org.apache.sling.jcr.base.internal.LoginAdminWhitelist;
+import org.apache.sling.jcr.base.internal.LoginAdminAllowlist;
 import org.apache.sling.jcr.base.internal.mount.ProxyJackrabbitRepository;
 import org.apache.sling.jcr.base.internal.mount.ProxyRepository;
 import org.apache.sling.jcr.base.spi.RepositoryMount;
@@ -120,7 +120,7 @@ public abstract class AbstractSlingRepositoryManager {
 
     private volatile Loader loader;
 
-    private volatile ServiceTracker<LoginAdminWhitelist, LoginAdminWhitelist> whitelistTracker;
+    private volatile ServiceTracker<LoginAdminAllowlist, LoginAdminAllowlist> whitelistTracker;
 
     private final Object repoInitLock = new Object();
 
@@ -520,9 +520,9 @@ public abstract class AbstractSlingRepositoryManager {
         boolean enableWhitelist = !isAllowLoginAdministrativeForBundleOverridden();
         final CountDownLatch waitForWhitelist = new CountDownLatch(enableWhitelist ? 1 : 0);
         if (enableWhitelist) {
-            whitelistTracker = new ServiceTracker<LoginAdminWhitelist, LoginAdminWhitelist>(bundleContext, LoginAdminWhitelist.class, null) {
+            whitelistTracker = new ServiceTracker<LoginAdminAllowlist, LoginAdminAllowlist>(bundleContext, LoginAdminAllowlist.class, null) {
                 @Override
-                public LoginAdminWhitelist addingService(final ServiceReference<LoginAdminWhitelist> reference) {
+                public LoginAdminAllowlist addingService(final ServiceReference<LoginAdminAllowlist> reference) {
                     try {
                         return super.addingService(reference);
                     } finally {
@@ -543,7 +543,7 @@ public abstract class AbstractSlingRepositoryManager {
                     waitForWhitelist.await();
                     initializeAndRegisterRepositoryService();
                 } catch (InterruptedException e) {
-                    log.warn("Interrupted while waiting for the {} service, cancelling repository initialisation. {}", LoginAdminWhitelist.class.getSimpleName(), INTERRUPTED_EXCEPTION_NOTE, e);
+                    log.warn("Interrupted while waiting for the {} service, cancelling repository initialisation. {}", LoginAdminAllowlist.class.getSimpleName(), INTERRUPTED_EXCEPTION_NOTE, e);
                     Thread.currentThread().interrupt();
                 }
             }
