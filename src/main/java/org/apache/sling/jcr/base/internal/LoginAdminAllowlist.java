@@ -48,18 +48,18 @@ import static org.apache.sling.commons.osgi.PropertiesUtil.toStringArray;
  * use the loginAdministrative method.
  */
 @Component(
-        service = LoginAdminWhitelist.class,
+        service = LoginAdminAllowlist.class,
         property = {
                 Constants.SERVICE_DESCRIPTION + "=Apache Sling Login Admin Whitelist",
                 Constants.SERVICE_VENDOR + "=The Apache Software Foundation"
         }
 )
 @Designate(
-        ocd = LoginAdminWhitelistConfiguration.class
+        ocd = LoginAdminAllowlistConfiguration.class
 )
-public class LoginAdminWhitelist {
+public class LoginAdminAllowlist {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LoginAdminWhitelist.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LoginAdminAllowlist.class);
 
     private volatile ConfigurationState config;
 
@@ -90,7 +90,7 @@ public class LoginAdminWhitelist {
     }
 
     @Activate @Modified @SuppressWarnings("unused")
-    void configure(LoginAdminWhitelistConfiguration configuration, Map<String, Object> properties) {
+    void configure(LoginAdminAllowlistConfiguration configuration, Map<String, Object> properties) {
         this.config = new ConfigurationState(configuration);
         ensureBackwardsCompatibility(properties, PROP_WHITELIST_BUNDLES_DEFAULT);
         ensureBackwardsCompatibility(properties, PROP_WHITELIST_BUNDLES_ADDITIONAL);
@@ -133,8 +133,8 @@ public class LoginAdminWhitelist {
 
         private final Pattern whitelistRegexp;
 
-        private ConfigurationState(final LoginAdminWhitelistConfiguration config) {
-            final String regexp = config.whitelist_bundles_regexp();
+        private ConfigurationState(final LoginAdminAllowlistConfiguration config) {
+            final String regexp = config.allowlist_bundles_regexp();
             if(regexp.trim().length() > 0) {
                 whitelistRegexp = Pattern.compile(regexp);
                 LOG.warn("A 'whitelist.bundles.regexp' is configured, this is NOT RECOMMENDED for production: {}",
@@ -143,7 +143,7 @@ public class LoginAdminWhitelist {
                 whitelistRegexp = null;
             }
 
-            bypassWhitelist = config.whitelist_bypass();
+            bypassWhitelist = config.allowlist_bypass();
             if(bypassWhitelist) {
                 LOG.info("bypassWhitelist=true, whitelisted BSNs=<ALL>");
                 LOG.warn("All bundles are allowed to use loginAdministrative due to the 'whitelist.bypass' " +

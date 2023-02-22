@@ -33,13 +33,13 @@ import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.service.cm.ConfigurationException;
 
-public class LoginAdminWhitelistTest {
+public class LoginAdminAllowlistTest {
 
-    private LoginAdminWhitelist whitelist;
+    private LoginAdminAllowlist whitelist;
 
     @Before
     public void setup() {
-        whitelist = new LoginAdminWhitelist();
+        whitelist = new LoginAdminAllowlist();
     }
     
     private void assertAdminLogin(final String bundleSymbolicName, boolean expected) {
@@ -170,13 +170,13 @@ public class LoginAdminWhitelistTest {
         }
     }
 
-    private void configure(final LoginAdminWhitelist whitelist, final Boolean bypass, final String regexp, final String[] defaultBSNs, final String[] additionalBSNs) throws ConfigurationException {
+    private void configure(final LoginAdminAllowlist whitelist, final Boolean bypass, final String regexp, final String[] defaultBSNs, final String[] additionalBSNs) throws ConfigurationException {
         final Hashtable<String, Object> props = new Hashtable<>();
         if (bypass != null) {
-            props.put("whitelist.bypass", bypass);
+            props.put("allowlist.bypass", bypass);
         }
         if (regexp != null) {
-            props.put("whitelist.bundles.regexp", regexp);
+            props.put("allowlist.bundles.regexp", regexp);
         }
         if (defaultBSNs != null) {
             props.put("whitelist.bundles.default", defaultBSNs);
@@ -184,8 +184,8 @@ public class LoginAdminWhitelistTest {
         if (additionalBSNs != null) {
             props.put("whitelist.bundles.additional", additionalBSNs);
         }
-        LoginAdminWhitelistConfiguration configuration =
-                ConfigAnnotationUtil.fromDictionary(LoginAdminWhitelistConfiguration.class, props);
+        LoginAdminAllowlistConfiguration configuration =
+                ConfigAnnotationUtil.fromDictionary(LoginAdminAllowlistConfiguration.class, props);
         whitelist.configure(configuration, props);
     }
 }
