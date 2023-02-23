@@ -40,12 +40,15 @@ public class LoginAdminAllowlistFragmentConfigurationEventListener implements Co
     @Activate
     public LoginAdminAllowlistFragmentConfigurationEventListener(@Reference ConfigurationUpdater configurationUpdater) {
         this.configurationUpdater = configurationUpdater;
+        this.configurationUpdater.updatePropsForFactoryPid(FRAGMENT_PROPS_TO_REPLACE, ALLOWLIST_FRAGMENT_PID,
+            WHITELIST_FRAGMENT_PID);
     }
 
     @Override
     public void configurationEvent(ConfigurationEvent event) {
         if (WHITELIST_FRAGMENT_PID.equals(event.getFactoryPid())) {
-            configurationUpdater.updateProps(FRAGMENT_PROPS_TO_REPLACE, event.getPid().replace(WHITELIST_FRAGMENT_PID, ALLOWLIST_FRAGMENT_PID),  event.getPid());
+            configurationUpdater.updateProps(FRAGMENT_PROPS_TO_REPLACE, event.getPid().replace(WHITELIST_FRAGMENT_PID,
+                ALLOWLIST_FRAGMENT_PID),  event.getPid());
         }
     }
 }

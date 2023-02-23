@@ -20,7 +20,6 @@ package org.apache.sling.jcr.base.internal;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.cm.ConfigurationEvent;
 import org.osgi.service.cm.ConfigurationListener;
 import org.osgi.service.component.annotations.Activate;
@@ -40,12 +39,17 @@ public class LoginAdminAllowlistConfigurationEventListener implements Configurat
     @Activate
     public LoginAdminAllowlistConfigurationEventListener(@Reference ConfigurationUpdater configurationUpdater) {
         this.configurationUpdater = configurationUpdater;
+        updateAllowlistProperties();
     }
 
     @Override
     public void configurationEvent(ConfigurationEvent event) {
         if (LOGIN_ADMIN_WHITELIST_PID.equals(event.getPid())) {
-            configurationUpdater.updateProps(LOGIN_ADMIN_WHITELIST_PROPS_TO_REPLACE, LOGIN_ADMIN_ALLOWLIST_PID,  LOGIN_ADMIN_WHITELIST_PID);
+            updateAllowlistProperties();
         }
+    }
+
+    private void updateAllowlistProperties() {
+        configurationUpdater.updateProps(LOGIN_ADMIN_WHITELIST_PROPS_TO_REPLACE, LOGIN_ADMIN_ALLOWLIST_PID, LOGIN_ADMIN_WHITELIST_PID);
     }
 }

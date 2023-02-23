@@ -30,10 +30,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -71,7 +73,7 @@ public class ConfigurationUpdaterTest {
     }
 
     @Test
-    public void testModifyConfiguration_whenFragmentOldPropertiesAreProvided_thenNewPropertiesAreConfigured() throws IOException {
+    public void testUpdateProps_whenFragmentOldPropertiesAreProvided_thenNewPropertiesAreConfigured() throws IOException {
         Dictionary<String, Object> sourceProperties = new Hashtable<>();
         final String whitelistNameValue = "whitelistNameValue";
         final String whitelistBundlesValue = "whitelistBundleValue";
@@ -85,10 +87,11 @@ public class ConfigurationUpdaterTest {
         configurationUpdater.updateProps(mappings, targetConfigPid, sourceConfigPid);
         verify(mockTargetConfiguration).update(targetPropertiesCaptor.capture());
         assertEquals(targetPropertiesCaptor.getValue(), targetProperties);
+        verify(mockSourceConfiguration).delete();
     }
 
     @Test
-    public void testModifyConfiguration_whenFragmentOldPropertiesAreNotProvided_thenNewPropertiesAreNotConfigured() {
+    public void testUpdateProps_whenFragmentOldPropertiesAreNotProvided_thenNewPropertiesAreNotConfigured() throws IOException {
         Dictionary<String, Object> sourceProperties = new Hashtable<>();
         sourceProperties.put("some.random.property", "value");
         when(mockSourceConfiguration.getProperties()).thenReturn(sourceProperties);
@@ -97,6 +100,31 @@ public class ConfigurationUpdaterTest {
 
         assertNull(targetProperties.get("allowlist.name"));
         assertNull(targetProperties.get("allowlist.bundles"));
+        verify(mockSourceConfiguration, never()).delete();
     }
 
+    @Test
+    public void testUpdatePropsForFactoryPid_whenFragmentOldPropertiesAreProvided_thenNewPropertiesAreConfigured() throws InvalidSyntaxException, IOException {
+        Dictionary<String, Object> sourceProperties = new Hashtable<>();
+        final String whitelistNameValue = "whitelistNameValue";
+        final String whitelistBundlesValue = "whitelistBundleValue";
+        sourceProperties.put("whitelist.name", whitelistNameValue);
+        sourceProperties.put("whitelist.bundles", whitelistBundlesValue);
+        targetProperties.put(mappings.get("whitelist.name"), whitelistNameValue);
+        targetProperties.put(mappings.get("whitelist.bundles"), whitelistBundlesValue);
+
+        when(mockSourceConfiguration.getProperties()).thenReturn(sourceProperties);
+        when(mockConfigurationAdmin.listConfigurations("(service.factoryPid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment)"))
+            .thenReturn(new Configuration[]{mockSourceConfiguration});
+        final String sourceConfigPid = "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~somefragment";
+        when(mockSourceConfiguration.getPid()).thenReturn(sourceConfigPid);
+        when(mockConfigurationAdmin.getConfiguration("org.apache.sling.jcr.base.internal.LoginAdminAllowlistlist.fragment~somefragment", null))
+            .thenReturn(mockTargetConfiguration);
+        configurationUpdater.updatePropsForFactoryPid(mappings, "org.apache.sling.jcr.base.internal.LoginAdminAllowlistlist.fragment",
+            "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment");
+
+        verify(mockTargetConfiguration).update(targetPropertiesCaptor.capture());
+        assertEquals(targetPropertiesCaptor.getValue(), targetProperties);
+        verify(mockSourceConfiguration).delete();
+    }
 }
