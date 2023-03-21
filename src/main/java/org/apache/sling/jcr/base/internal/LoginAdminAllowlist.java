@@ -137,7 +137,7 @@ public class LoginAdminAllowlist {
             final String regexp = config.allowlist_bundles_regexp();
             if(regexp.trim().length() > 0) {
                 whitelistRegexp = Pattern.compile(regexp);
-                LOG.warn("A 'whitelist.bundles.regexp' is configured, this is NOT RECOMMENDED for production: {}",
+                LOG.warn("A 'allowlist.bundles.regexp' is configured, this is NOT RECOMMENDED for production: {}",
                         whitelistRegexp);
             } else {
                 whitelistRegexp = null;
@@ -145,8 +145,8 @@ public class LoginAdminAllowlist {
 
             bypassWhitelist = config.allowlist_bypass();
             if(bypassWhitelist) {
-                LOG.info("bypassWhitelist=true, whitelisted BSNs=<ALL>");
-                LOG.warn("All bundles are allowed to use loginAdministrative due to the 'whitelist.bypass' " +
+                LOG.info("bypassAllowlist=true, allowlisted BSNs=<ALL>");
+                LOG.warn("All bundles are allowed to use loginAdministrative due to the 'allowlist.bypass' " +
                         "configuration of this service. This is NOT RECOMMENDED, for security reasons."
                 );
             }

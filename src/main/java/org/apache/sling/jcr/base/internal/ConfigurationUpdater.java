@@ -19,54 +19,84 @@
 package org.apache.sling.jcr.base.internal;
 
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.function.Function;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
-import org.osgi.service.component.annotations.Activate;
-import org.osgi.service.component.annotations.Component;
-import org.osgi.service.component.annotations.Reference;
+import org.osgi.service.cm.ConfigurationEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component(service = ConfigurationUpdater.class, immediate = true)
-public class ConfigurationUpdater {
+public abstract class ConfigurationUpdater {
     private static final Logger LOG = LoggerFactory.getLogger(ConfigurationUpdater.class);
 
-    private final ConfigurationAdmin configurationAdmin;
+    protected final String oldPid;
+    protected final String newPid;
+    protected final Function<ConfigurationEvent, String> pidMapper;
+    protected final Map<String, String> propsToReplace;
 
-    @Activate
-    public ConfigurationUpdater(@Reference ConfigurationAdmin configurationAdmin) {
-        this.configurationAdmin = configurationAdmin;
+    public ConfigurationUpdater(String oldPid, String newPid, Function<ConfigurationEvent, String> pidMapper, Map<String, String> propsToReplace) {
+        this.oldPid = oldPid;
+        this.newPid = newPid;
+        this.pidMapper = pidMapper;
+        this.propsToReplace = propsToReplace;
     }
 
-    public void updateProps(Map<String, String> propsToReplace, String targetConfigPid, String sourceConfigPid) {
-        try {
-            Configuration sourceConfiguration = configurationAdmin.getConfiguration(sourceConfigPid, null);
-            updateProps(propsToReplace, targetConfigPid, sourceConfiguration);
-        } catch (IOException e) {
-            LOG.warn("Failed to retrieve configuration for PID: {}. PID's {} configuration is not updated.",
-                sourceConfigPid, targetConfigPid, e);
+    public static ConfigurationUpdater forPid(String oldPid, String newPid, Map<String, String> propsToReplace) {
+        return new PidConfigurationUpdater(oldPid, newPid, ConfigurationEvent::getPid, propsToReplace);
+    }
+
+    public static ConfigurationUpdater forFactoryPid(String oldPid, String newPid, Map<String, String> propsToReplace) {
+        return new FactoryPidConfigurationUpdater(oldPid, newPid, ConfigurationEvent::getFactoryPid, propsToReplace);
+    }
+
+    public boolean canHandle(ConfigurationEvent event) {
+       return oldPid.equals(pidMapper.apply(event));
+    }
+
+    public abstract void updateProps(ConfigurationAdmin configurationAdmin);
+
+    private static class PidConfigurationUpdater extends ConfigurationUpdater {
+        public PidConfigurationUpdater(String oldPid, String newPid, Function<ConfigurationEvent, String> pidMapper, Map<String, String> propsToReplace) {
+            super(oldPid, newPid, pidMapper, propsToReplace);
         }
-    }
 
-    public void updatePropsForFactoryPid(Map<String, String> propsToReplace, String targetConfigFactoryPid, String sourceConfigFactoryPid) {
-        final String pidFactoryFilter = MessageFormat.format("(service.factoryPid={0})", sourceConfigFactoryPid);
-        try {
-            Configuration[] sourceConfigs = configurationAdmin.listConfigurations(pidFactoryFilter);
-            for (Configuration sourceConfig : sourceConfigs) {
-                String targetConfigPid = sourceConfig.getPid().replace(sourceConfigFactoryPid, targetConfigFactoryPid);
-                updateProps(propsToReplace, targetConfigPid, sourceConfig);
+        public void updateProps(ConfigurationAdmin configurationAdmin) {
+            try {
+                Configuration sourceConfiguration = configurationAdmin.getConfiguration(oldPid, null);
+                updateProps(propsToReplace, newPid, sourceConfiguration, configurationAdmin);
+            } catch (IOException e) {
+                LOG.warn("Failed to retrieve configuration for PID: {}. PID's {} configuration is not updated.",
+                    oldPid, newPid, e);
             }
-        } catch (IOException | InvalidSyntaxException e) {
-            LOG.warn("Failed to list configurations for filter: {}.", pidFactoryFilter, e);
         }
     }
 
-    private void updateProps(Map<String, String> propsToReplace, String targetConfigPid, Configuration sourceConfiguration) {
+    private static class FactoryPidConfigurationUpdater extends ConfigurationUpdater {
+
+        public FactoryPidConfigurationUpdater(String oldPid, String newPid, Function<ConfigurationEvent, String> pidMapper, Map<String, String> propsToReplace) {
+            super(oldPid, newPid, pidMapper, propsToReplace);
+        }
+
+        @Override
+        public void updateProps(ConfigurationAdmin configurationAdmin) {
+            final String pidFactoryFilter = String.format("(service.factoryPid=%s)", oldPid);
+            try {
+                Configuration[] sourceConfigs = configurationAdmin.listConfigurations(pidFactoryFilter);
+                for (Configuration sourceConfig : sourceConfigs) {
+                    String targetConfigPid = sourceConfig.getPid().replace(oldPid, newPid);
+                    updateProps(propsToReplace, targetConfigPid, sourceConfig, configurationAdmin);
+                }
+            } catch (IOException | InvalidSyntaxException e) {
+                LOG.warn("Failed to list configurations for filter: {}.", pidFactoryFilter, e);
+            }
+        }
+    }
+
+    protected void updateProps(Map<String, String> propsToReplace, String targetConfigPid, Configuration sourceConfiguration, ConfigurationAdmin configurationAdmin) {
         final Dictionary<String, Object> targetProperties = new Hashtable<>();
         propsToReplace.forEach((oldKey, newKey) -> {
             final Dictionary<String, Object> sourceProperties;
@@ -83,7 +113,7 @@ public class ConfigurationUpdater {
                 LOG.warn("Updating configuration for PID: {} with configuration from source PID: {}", targetConfigPid,
                     sourceConfiguration.getPid());
                 configurationAdmin.getConfiguration(targetConfigPid, null).update(targetProperties);
-                LOG.warn("Deleting configuration for PID: {}", sourceConfiguration.getPid());
+                LOG.warn("Deleting configuration for PID: {} after it was migrated", sourceConfiguration.getPid());
                 sourceConfiguration.delete();
             } catch (IOException e) {
                 LOG.warn("Failed to update configuration for PID: {} from source PID: {}", targetConfigPid,

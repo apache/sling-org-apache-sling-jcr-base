@@ -53,8 +53,6 @@ public class ConfigurationUpdaterTest {
     @Captor
     private ArgumentCaptor<Dictionary<String, ?>> targetPropertiesCaptor;
 
-    private ConfigurationUpdater configurationUpdater;
-
     private final String targetConfigPid = "someConfigPid";
     private final String sourceConfigPid = "anotherConfigPid";
 
@@ -67,7 +65,6 @@ public class ConfigurationUpdaterTest {
         when(mockConfigurationAdmin.getConfiguration(targetConfigPid, null)).thenReturn(mockTargetConfiguration);
         targetProperties = new Hashtable<>();
         when(mockTargetConfiguration.getProperties()).thenReturn(targetProperties);
-        configurationUpdater = new ConfigurationUpdater(mockConfigurationAdmin);
         mappings.put("whitelist.name", "allowlist.name");
         mappings.put("whitelist.bundles", "allowlist.bundles");
     }
@@ -84,7 +81,9 @@ public class ConfigurationUpdaterTest {
 
         when(mockSourceConfiguration.getProperties()).thenReturn(sourceProperties);
 
-        configurationUpdater.updateProps(mappings, targetConfigPid, sourceConfigPid);
+        ConfigurationUpdater configurationUpdater = ConfigurationUpdater.forPid(sourceConfigPid, targetConfigPid, mappings);
+        configurationUpdater.updateProps(mockConfigurationAdmin);
+
         verify(mockTargetConfiguration).update(targetPropertiesCaptor.capture());
         assertEquals(targetPropertiesCaptor.getValue(), targetProperties);
         verify(mockSourceConfiguration).delete();
@@ -96,7 +95,8 @@ public class ConfigurationUpdaterTest {
         sourceProperties.put("some.random.property", "value");
         when(mockSourceConfiguration.getProperties()).thenReturn(sourceProperties);
 
-        configurationUpdater.updateProps(mappings, targetConfigPid, sourceConfigPid);
+        ConfigurationUpdater configurationUpdater = ConfigurationUpdater.forPid(sourceConfigPid, targetConfigPid, mappings);
+        configurationUpdater.updateProps(mockConfigurationAdmin);
 
         assertNull(targetProperties.get("allowlist.name"));
         assertNull(targetProperties.get("allowlist.bundles"));
@@ -112,7 +112,6 @@ public class ConfigurationUpdaterTest {
         sourceProperties.put("whitelist.bundles", whitelistBundlesValue);
         targetProperties.put(mappings.get("whitelist.name"), whitelistNameValue);
         targetProperties.put(mappings.get("whitelist.bundles"), whitelistBundlesValue);
-
         when(mockSourceConfiguration.getProperties()).thenReturn(sourceProperties);
         when(mockConfigurationAdmin.listConfigurations("(service.factoryPid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment)"))
             .thenReturn(new Configuration[]{mockSourceConfiguration});
@@ -120,8 +119,9 @@ public class ConfigurationUpdaterTest {
         when(mockSourceConfiguration.getPid()).thenReturn(sourceConfigPid);
         when(mockConfigurationAdmin.getConfiguration("org.apache.sling.jcr.base.internal.LoginAdminAllowlistlist.fragment~somefragment", null))
             .thenReturn(mockTargetConfiguration);
-        configurationUpdater.updatePropsForFactoryPid(mappings, "org.apache.sling.jcr.base.internal.LoginAdminAllowlistlist.fragment",
-            "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment");
+
+        ConfigurationUpdater configurationUpdater = ConfigurationUpdater.forFactoryPid("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment", "org.apache.sling.jcr.base.internal.LoginAdminAllowlistlist.fragment", mappings);
+        configurationUpdater.updateProps(mockConfigurationAdmin);
 
         verify(mockTargetConfiguration).update(targetPropertiesCaptor.capture());
         assertEquals(targetPropertiesCaptor.getValue(), targetProperties);
