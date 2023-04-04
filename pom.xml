@@ -39,7 +39,6 @@
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-jcr-base.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-jcr-base.git</developerConnection>
         <url>https://gitbox.apache.org/repos/asf?p=sling-org-apache-sling-jcr-base.git</url>
-      <tag>org.apache.sling.jcr.base-3.1.8</tag>
   </scm>
 
     <build>
@@ -55,22 +54,6 @@
 	        </plugin>
         </plugins>
     </build>
-
-    <dependencyManagement>
-        <dependencies>
-            <!-- aggregate artifacts only used in test classpath, compare with https://lists.apache.org/thread/srm5cbfjn1004ql4c5k6mgbp1t684zc0 -->
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>osgi.core</artifactId>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.osgi</groupId>
-                <artifactId>osgi.cmpn</artifactId>
-                <scope>test</scope>
-             </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <dependency>
