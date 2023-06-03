@@ -80,13 +80,13 @@ public class LoginAdminAllowlist {
     ) @SuppressWarnings("unused")
     void bindWhitelistFragment(AllowListFragment fragment) {
         whitelistFragments.add(fragment);
-        LOG.info("WhitelistFragment added '{}'", fragment);
+        LOG.info("AllowListFragment added '{}'", fragment);
     }
 
     @SuppressWarnings("unused")
     void unbindWhitelistFragment(AllowListFragment fragment) {
         whitelistFragments.remove(fragment);
-        LOG.info("WhitelistFragment removed '{}'", fragment);
+        LOG.info("AllowListFragment removed '{}'", fragment);
     }
 
     @Activate @Modified @SuppressWarnings("unused")
@@ -98,53 +98,53 @@ public class LoginAdminAllowlist {
 
     public boolean allowLoginAdministrative(Bundle b) {
         if (config == null) {
-            throw new IllegalStateException("LoginAdminWhitelist has no configuration.");
+            throw new IllegalStateException("LoginAdminAllowlist has no configuration.");
         }
         // create local copy of ConfigurationState to avoid reading mixed configurations during an configure
         final ConfigurationState localConfig = this.config;
-        if(localConfig.bypassWhitelist) {
-            LOG.debug("Whitelist is bypassed, all bundles allowed to use loginAdministrative");
+        if(localConfig.bypassAllowList) {
+            LOG.debug("Allow list is bypassed, all bundles allowed to use loginAdministrative");
             return true;
         }
 
         final String bsn = b.getSymbolicName();
 
-        if(localConfig.whitelistRegexp != null && localConfig.whitelistRegexp.matcher(bsn).matches()) {
-            LOG.debug("{} is whitelisted to use loginAdministrative, by regexp", bsn);
+        if(localConfig.allowListRegexp != null && localConfig.allowListRegexp.matcher(bsn).matches()) {
+            LOG.debug("{} is allow listed to use loginAdministrative, by regexp", bsn);
             return true;
         }
 
         for (final AllowListFragment fragment : whitelistFragments) {
             if (fragment.allows(bsn)) {
-                LOG.debug("{} is whitelisted to use loginAdministrative, by whitelist fragment '{}'",
+                LOG.debug("{} is allow listed to use loginAdministrative, by allow list fragment '{}'",
                         bsn, fragment);
                 return true;
             }
         }
 
-        LOG.debug("{} is not whitelisted to use loginAdministrative", bsn);
+        LOG.debug("{} is not allow listed to use loginAdministrative", bsn);
         return false;
     }
 
     // encapsulate configuration state for atomic configuration updates
     private static class ConfigurationState {
 
-        private final boolean bypassWhitelist;
+        private final boolean bypassAllowList;
 
-        private final Pattern whitelistRegexp;
+        private final Pattern allowListRegexp;
 
         private ConfigurationState(final LoginAdminAllowlistConfiguration config) {
             final String regexp = config.allowlist_bundles_regexp();
             if(regexp.trim().length() > 0) {
-                whitelistRegexp = Pattern.compile(regexp);
+                allowListRegexp = Pattern.compile(regexp);
                 LOG.warn("A 'allowlist.bundles.regexp' is configured, this is NOT RECOMMENDED for production: {}",
-                        whitelistRegexp);
+                        allowListRegexp);
             } else {
-                whitelistRegexp = null;
+                allowListRegexp = null;
             }
 
-            bypassWhitelist = config.allowlist_bypass();
-            if(bypassWhitelist) {
+            bypassAllowList = config.allowlist_bypass();
+            if(bypassAllowList) {
                 LOG.info("bypassAllowlist=true, allowlisted BSNs=<ALL>");
                 LOG.warn("All bundles are allowed to use loginAdministrative due to the 'allowlist.bypass' " +
                         "configuration of this service. This is NOT RECOMMENDED, for security reasons."
