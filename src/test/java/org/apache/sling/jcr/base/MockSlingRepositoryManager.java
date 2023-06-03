@@ -36,25 +36,25 @@ import org.osgi.framework.BundleContext;
 /** Minimal AbstractSlingRepositoryManager used for testing */
 public class MockSlingRepositoryManager extends AbstractSlingRepositoryManager {
 
-    public static final String WHITELIST_ALL = "*";
+    public static final String ALLOWLIST_ALL = "*";
 
-    public static final String WHITELIST_NONE = "";
+    public static final String ALLOWLIST_NONE = "";
 
     private final Repository repository;
 
     private boolean loginAdminDisabled;
 
-    private Set<String> loginAdminWhitelist;
+    private Set<String> loginAdminAllowList;
 
     public MockSlingRepositoryManager(Repository repository) {
-        this(repository, false, WHITELIST_ALL);
+        this(repository, false, ALLOWLIST_ALL);
     }
 
-    public MockSlingRepositoryManager(Repository repository, boolean loginAdminDisabled, String... loginAdminWhitelist) {
+    public MockSlingRepositoryManager(Repository repository, boolean loginAdminDisabled, String... loginAdminAllowList) {
         this.repository = repository;
         this.loginAdminDisabled = loginAdminDisabled;
-        this.loginAdminWhitelist = new HashSet<>(Arrays.asList(loginAdminWhitelist));
-        this.loginAdminWhitelist.remove(WHITELIST_NONE);
+        this.loginAdminAllowList = new HashSet<>(Arrays.asList(loginAdminAllowList));
+        this.loginAdminAllowList.remove(ALLOWLIST_NONE);
     }
 
     @Override
@@ -94,7 +94,7 @@ public class MockSlingRepositoryManager extends AbstractSlingRepositoryManager {
 
     @Override
     protected boolean allowLoginAdministrativeForBundle(final Bundle bundle) {
-        return loginAdminWhitelist.contains("*") || loginAdminWhitelist.contains(bundle.getSymbolicName());
+        return loginAdminAllowList.contains("*") || loginAdminAllowList.contains(bundle.getSymbolicName());
     }
 
     public void activate(BundleContext context) {

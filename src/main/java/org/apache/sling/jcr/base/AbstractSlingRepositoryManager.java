@@ -33,7 +33,7 @@ import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.sling.jcr.api.SlingRepository;
 import org.apache.sling.jcr.api.SlingRepositoryInitializer;
 import org.apache.sling.jcr.base.internal.loader.Loader;
-import org.apache.sling.jcr.base.internal.LoginAdminAllowlist;
+import org.apache.sling.jcr.base.internal.LoginAdminAllowList;
 import org.apache.sling.jcr.base.internal.mount.ProxyJackrabbitRepository;
 import org.apache.sling.jcr.base.internal.mount.ProxyRepository;
 import org.apache.sling.jcr.base.spi.RepositoryMount;
@@ -120,7 +120,7 @@ public abstract class AbstractSlingRepositoryManager {
 
     private volatile Loader loader;
 
-    private volatile ServiceTracker<LoginAdminAllowlist, LoginAdminAllowlist> whitelistTracker;
+    private volatile ServiceTracker<LoginAdminAllowList, LoginAdminAllowList> allowListTracker;
 
     private final Object repoInitLock = new Object();
 
@@ -181,7 +181,7 @@ public abstract class AbstractSlingRepositoryManager {
      *         to use {@code loginAdministrative}.
      */
     protected boolean allowLoginAdministrativeForBundle(final Bundle bundle) {
-        return whitelistTracker.getService().allowLoginAdministrative(bundle);
+        return allowListTracker.getService().allowLoginAdministrative(bundle);
     }
 
     /**
@@ -514,36 +514,36 @@ public abstract class AbstractSlingRepositoryManager {
         this.repoInitializerTracker.open();
 
         // If allowLoginAdministrativeForBundle is overridden we assume we don't need
-        // a LoginAdminWhitelist service - that's the case if the derived class
-        // implements its own strategy and the LoginAdminWhitelist interface is
+        // a LoginAdminAllowList service - that's the case if the derived class
+        // implements its own strategy and the LoginAdminAllowList interface is
         // not exported by this bundle anyway, so cannot be implemented differently.
-        boolean enableWhitelist = !isAllowLoginAdministrativeForBundleOverridden();
-        final CountDownLatch waitForWhitelist = new CountDownLatch(enableWhitelist ? 1 : 0);
-        if (enableWhitelist) {
-            whitelistTracker = new ServiceTracker<LoginAdminAllowlist, LoginAdminAllowlist>(bundleContext, LoginAdminAllowlist.class, null) {
+        boolean enableAllowlist = !isAllowLoginAdministrativeForBundleOverridden();
+        final CountDownLatch waitForAllowList = new CountDownLatch(enableAllowlist ? 1 : 0);
+        if (enableAllowlist) {
+            allowListTracker = new ServiceTracker<LoginAdminAllowList, LoginAdminAllowList>(bundleContext, LoginAdminAllowList.class, null) {
                 @Override
-                public LoginAdminAllowlist addingService(final ServiceReference<LoginAdminAllowlist> reference) {
+                public LoginAdminAllowList addingService(final ServiceReference<LoginAdminAllowList> reference) {
                     try {
                         return super.addingService(reference);
                     } finally {
-                        waitForWhitelist.countDown();
+                        waitForAllowList.countDown();
                     }
                 }
             };
-            whitelistTracker.open();
+            allowListTracker.open();
         }
 
-        // start repository asynchronously to allow LoginAdminWhitelist to become available
-        // NOTE: making this conditional allows tests to register a mock whitelist before
+        // start repository asynchronously to allow LoginAdminAllowList to become available
+        // NOTE: making this conditional allows tests to register a mock allow list before
         // activating the RepositoryManager, so they don't need to deal with async startup
         startupThread = new Thread("Apache Sling Repository Startup Thread #" + startupCounter.incrementAndGet()) {
             @Override
             public void run() {
                 try {
-                    waitForWhitelist.await();
+                    waitForAllowList.await();
                     initializeAndRegisterRepositoryService();
                 } catch (InterruptedException e) {
-                    log.warn("Interrupted while waiting for the {} service, cancelling repository initialisation. {}", LoginAdminAllowlist.class.getSimpleName(), INTERRUPTED_EXCEPTION_NOTE, e);
+                    log.warn("Interrupted while waiting for the {} service, cancelling repository initialisation. {}", LoginAdminAllowList.class.getSimpleName(), INTERRUPTED_EXCEPTION_NOTE, e);
                     Thread.currentThread().interrupt();
                 }
             }
@@ -686,9 +686,9 @@ public abstract class AbstractSlingRepositoryManager {
             repoInitializerTracker = null;
         }
 
-        if (whitelistTracker != null) {
-            whitelistTracker.close();
-            whitelistTracker = null;
+        if (allowListTracker != null) {
+            allowListTracker.close();
+            allowListTracker = null;
         }
 
         this.repositoryService = null;

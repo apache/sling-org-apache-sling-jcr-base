@@ -55,7 +55,7 @@ import static java.util.Arrays.asList;
 }
 
 @Component(
-        configurationPid = "org.apache.sling.jcr.base.internal.LoginAdminAllowlist.fragment",
+        configurationPid = "org.apache.sling.jcr.base.internal.LoginAdminAllowList.fragment",
         configurationPolicy = ConfigurationPolicy.REQUIRE,
         service = AllowListFragment.class
 )

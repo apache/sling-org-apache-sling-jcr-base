@@ -25,7 +25,7 @@ import org.osgi.service.metatype.annotations.ObjectClassDefinition;
     name = "Apache Sling Login Admin Allowlist",
     description = "Defines which bundles can use SlingRepository.loginAdministrative()"
 )
-@interface LoginAdminAllowlistConfiguration {
+@interface LoginAdminAllowListConfiguration {
 
     /**
      * Need to allow for bypassing the allowlist, for backwards

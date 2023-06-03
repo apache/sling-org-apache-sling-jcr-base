@@ -18,8 +18,8 @@
  */
 package org.apache.sling.jcr.base.internal;
 
-import static org.apache.sling.jcr.base.MockSlingRepositoryManager.WHITELIST_ALL;
-import static org.apache.sling.jcr.base.MockSlingRepositoryManager.WHITELIST_NONE;
+import static org.apache.sling.jcr.base.MockSlingRepositoryManager.ALLOWLIST_ALL;
+import static org.apache.sling.jcr.base.MockSlingRepositoryManager.ALLOWLIST_NONE;
 import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
@@ -44,19 +44,19 @@ import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
-/** Verify that the AbstractSlingRepository2 uses the login admin whitelist,
+/** Verify that the AbstractSlingRepository2 uses the login admin allow list,
  *  as well as its combination with the global "disable login admin" flag
  */
 @RunWith(Parameterized.class)
-public class WhitelistWiringTest {
+public class AllowListWiringTest {
 
     private SlingRepository repository;
 
     private final boolean managerAllowsLoginAdmin;
-    private final boolean whitelistAllowsLoginAdmin;
+    private final boolean allowListAllowsLoginAdmin;
     private final boolean loginAdminExpected;
  
-    @Parameters(name="manager {0}, whitelist {1} -> {2}")
+    @Parameters(name="manager {0}, allow list {1} -> {2}")
     public static Collection<Object[]> data() {
         final List<Object[]> result = new ArrayList<Object[]>();
         result.add(new Object[] { false, false, false });
@@ -66,9 +66,9 @@ public class WhitelistWiringTest {
         return result;
     }
 
-    public WhitelistWiringTest(boolean managerAllowsLoginAdmin, boolean whitelistAllowsLoginAdmin, boolean loginAdminExpected) {
+    public AllowListWiringTest(boolean managerAllowsLoginAdmin, boolean allowListAllowsLoginAdmin, boolean loginAdminExpected) {
         this.managerAllowsLoginAdmin = managerAllowsLoginAdmin;
-        this.whitelistAllowsLoginAdmin = whitelistAllowsLoginAdmin;
+        this.allowListAllowsLoginAdmin = allowListAllowsLoginAdmin;
         this.loginAdminExpected = loginAdminExpected;
     }
     
@@ -77,10 +77,10 @@ public class WhitelistWiringTest {
         BundleContext bundleContext = MockOsgi.newBundleContext();
         Bundle bundle = bundleContext.getBundle();
 
-        String whitelist = whitelistAllowsLoginAdmin ? WHITELIST_ALL : WHITELIST_NONE;
+        String allowList = allowListAllowsLoginAdmin ? ALLOWLIST_ALL : ALLOWLIST_NONE;
 
         final MockSlingRepositoryManager repoMgr =
-                new MockSlingRepositoryManager(MockJcr.newRepository(), !managerAllowsLoginAdmin, whitelist);
+                new MockSlingRepositoryManager(MockJcr.newRepository(), !managerAllowsLoginAdmin, allowList);
 
         repoMgr.activate(bundleContext);
         

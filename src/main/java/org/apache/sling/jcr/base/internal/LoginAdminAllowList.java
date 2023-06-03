@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 
 import org.apache.sling.jcr.api.SlingRepository;
 import org.osgi.framework.Bundle;
-import org.osgi.framework.Constants;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Modified;
@@ -47,23 +46,17 @@ import static org.apache.sling.commons.osgi.PropertiesUtil.toStringArray;
  * The default configuration lets a few trusted Sling bundles
  * use the loginAdministrative method.
  */
-@Component(
-        service = LoginAdminAllowlist.class,
-        property = {
-                Constants.SERVICE_DESCRIPTION + "=Apache Sling Login Admin Whitelist",
-                Constants.SERVICE_VENDOR + "=The Apache Software Foundation"
-        }
-)
+@Component(service = LoginAdminAllowList.class)
 @Designate(
-        ocd = LoginAdminAllowlistConfiguration.class
+        ocd = LoginAdminAllowListConfiguration.class
 )
-public class LoginAdminAllowlist {
+public class LoginAdminAllowList {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LoginAdminAllowlist.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LoginAdminAllowList.class);
 
     private volatile ConfigurationState config;
 
-    private final List<AllowListFragment> whitelistFragments = new CopyOnWriteArrayList<AllowListFragment>();
+    private final List<AllowListFragment> allowListFragments = new CopyOnWriteArrayList<AllowListFragment>();
 
     // for backwards compatibility only (read properties directly to prevent them from appearing in the metatype)
     private static final String PROP_WHITELIST_BUNDLES_DEFAULT = "whitelist.bundles.default";
@@ -78,19 +71,19 @@ public class LoginAdminAllowlist {
             policy = ReferencePolicy.DYNAMIC,
             policyOption = ReferencePolicyOption.GREEDY
     ) @SuppressWarnings("unused")
-    void bindWhitelistFragment(AllowListFragment fragment) {
-        whitelistFragments.add(fragment);
+    void bindAllowListFragment(AllowListFragment fragment) {
+        allowListFragments.add(fragment);
         LOG.info("AllowListFragment added '{}'", fragment);
     }
 
     @SuppressWarnings("unused")
-    void unbindWhitelistFragment(AllowListFragment fragment) {
-        whitelistFragments.remove(fragment);
+    void unbindAllowListFragment(AllowListFragment fragment) {
+        allowListFragments.remove(fragment);
         LOG.info("AllowListFragment removed '{}'", fragment);
     }
 
     @Activate @Modified @SuppressWarnings("unused")
-    void configure(LoginAdminAllowlistConfiguration configuration, Map<String, Object> properties) {
+    void configure(LoginAdminAllowListConfiguration configuration, Map<String, Object> properties) {
         this.config = new ConfigurationState(configuration);
         ensureBackwardsCompatibility(properties, PROP_WHITELIST_BUNDLES_DEFAULT);
         ensureBackwardsCompatibility(properties, PROP_WHITELIST_BUNDLES_ADDITIONAL);
@@ -98,7 +91,7 @@ public class LoginAdminAllowlist {
 
     public boolean allowLoginAdministrative(Bundle b) {
         if (config == null) {
-            throw new IllegalStateException("LoginAdminAllowlist has no configuration.");
+            throw new IllegalStateException("LoginAdminAllowList has no configuration.");
         }
         // create local copy of ConfigurationState to avoid reading mixed configurations during an configure
         final ConfigurationState localConfig = this.config;
@@ -114,7 +107,7 @@ public class LoginAdminAllowlist {
             return true;
         }
 
-        for (final AllowListFragment fragment : whitelistFragments) {
+        for (final AllowListFragment fragment : allowListFragments) {
             if (fragment.allows(bsn)) {
                 LOG.debug("{} is allow listed to use loginAdministrative, by allow list fragment '{}'",
                         bsn, fragment);
@@ -133,7 +126,7 @@ public class LoginAdminAllowlist {
 
         private final Pattern allowListRegexp;
 
-        private ConfigurationState(final LoginAdminAllowlistConfiguration config) {
+        private ConfigurationState(final LoginAdminAllowListConfiguration config) {
             final String regexp = config.allowlist_bundles_regexp();
             if(regexp.trim().length() > 0) {
                 allowListRegexp = Pattern.compile(regexp);
@@ -161,12 +154,12 @@ public class LoginAdminAllowlist {
         if (bsns.length != 0) {
             LOG.warn("Using deprecated configuration property '{}'", propertyName);
             final AllowListFragment fragment = new AllowListFragment("deprecated-" + propertyName, bsns);
-            bindWhitelistFragment(fragment);
+            bindAllowListFragment(fragment);
             backwardsCompatibleFragments.put(propertyName, fragment);
         }
         
         if (oldFragment != null) {
-            unbindWhitelistFragment(oldFragment);
+            unbindAllowListFragment(oldFragment);
         }
     }
 }
