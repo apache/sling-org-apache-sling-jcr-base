@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
 import static org.apache.sling.commons.osgi.PropertiesUtil.toStringArray;
 
 /**
- * Whitelist that defines which bundles can use the
+ * Allow list that defines which bundles can use the
  * {@link SlingRepository#loginAdministrative} method.
  *
  * The default configuration lets a few trusted Sling bundles
@@ -63,28 +63,28 @@ public class LoginAdminAllowlist {
 
     private volatile ConfigurationState config;
 
-    private final List<WhitelistFragment> whitelistFragments = new CopyOnWriteArrayList<WhitelistFragment>();
+    private final List<AllowListFragment> whitelistFragments = new CopyOnWriteArrayList<AllowListFragment>();
 
     // for backwards compatibility only (read properties directly to prevent them from appearing in the metatype)
     private static final String PROP_WHITELIST_BUNDLES_DEFAULT = "whitelist.bundles.default";
 
     private static final String PROP_WHITELIST_BUNDLES_ADDITIONAL = "whitelist.bundles.additional";
 
-    private final Map<String, WhitelistFragment> backwardsCompatibleFragments =
-            new ConcurrentHashMap<String, WhitelistFragment>();
+    private final Map<String, AllowListFragment> backwardsCompatibleFragments =
+            new ConcurrentHashMap<String, AllowListFragment>();
 
     @Reference(
             cardinality = ReferenceCardinality.MULTIPLE,
             policy = ReferencePolicy.DYNAMIC,
             policyOption = ReferencePolicyOption.GREEDY
     ) @SuppressWarnings("unused")
-    void bindWhitelistFragment(WhitelistFragment fragment) {
+    void bindWhitelistFragment(AllowListFragment fragment) {
         whitelistFragments.add(fragment);
         LOG.info("WhitelistFragment added '{}'", fragment);
     }
 
     @SuppressWarnings("unused")
-    void unbindWhitelistFragment(WhitelistFragment fragment) {
+    void unbindWhitelistFragment(AllowListFragment fragment) {
         whitelistFragments.remove(fragment);
         LOG.info("WhitelistFragment removed '{}'", fragment);
     }
@@ -114,7 +114,7 @@ public class LoginAdminAllowlist {
             return true;
         }
 
-        for (final WhitelistFragment fragment : whitelistFragments) {
+        for (final AllowListFragment fragment : whitelistFragments) {
             if (fragment.allows(bsn)) {
                 LOG.debug("{} is whitelisted to use loginAdministrative, by whitelist fragment '{}'",
                         bsn, fragment);
@@ -155,12 +155,12 @@ public class LoginAdminAllowlist {
 
     @SuppressWarnings("deprecated")
     private void ensureBackwardsCompatibility(final Map<String, Object> properties, final String propertyName) {
-        final WhitelistFragment oldFragment = backwardsCompatibleFragments.remove(propertyName);
+        final AllowListFragment oldFragment = backwardsCompatibleFragments.remove(propertyName);
         
         final String[] bsns = toStringArray(properties.get(propertyName), new String[0]);
         if (bsns.length != 0) {
             LOG.warn("Using deprecated configuration property '{}'", propertyName);
-            final WhitelistFragment fragment = new WhitelistFragment("deprecated-" + propertyName, bsns);
+            final AllowListFragment fragment = new AllowListFragment("deprecated-" + propertyName, bsns);
             bindWhitelistFragment(fragment);
             backwardsCompatibleFragments.put(propertyName, fragment);
         }

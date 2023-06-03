@@ -140,8 +140,8 @@ public class LoginAdminAllowlistTest {
         final String [] allowed1 = randomBsn().toArray(new String[0]);
         final String [] allowed2 = randomBsn().toArray(new String[0]);
 
-        final WhitelistFragment testFragment1 = new WhitelistFragment("test1", allowed1);
-        final WhitelistFragment testFragment2 = new WhitelistFragment("test2", allowed2);
+        final AllowListFragment testFragment1 = new AllowListFragment("test1", allowed1);
+        final AllowListFragment testFragment2 = new AllowListFragment("test2", allowed2);
 
         configure(whitelist, null, null, null, null);
         whitelist.bindWhitelistFragment(testFragment1);

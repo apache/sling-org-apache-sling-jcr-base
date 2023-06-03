@@ -32,9 +32,9 @@ import java.util.Set;
 import static java.util.Arrays.asList;
 
 @ObjectClassDefinition(
-        name = "Apache Sling Login Admin Allowlist Configuration Fragment",
-        description = "Allowlist configuration fragments contribute a list of allowlisted bundle symbolic " +
-                "names to the Login Admin Allowlist. This allows for modularisation of the allowlist."
+        name = "Apache Sling Login Admin Allow List Configuration Fragment",
+        description = "Allow list configuration fragments contribute a list of allow listed bundle symbolic " +
+                "names to the Login Admin Allow List. This allows for modularisation of the allow list."
 )
 @interface Configuration {
 
@@ -45,7 +45,7 @@ import static java.util.Arrays.asList;
     String allowlist_name() default "[unnamed]";
 
     @AttributeDefinition(
-            name = "Whitelisted BSNs",
+            name = "Allow listed BSNs",
             description = "A list of bundle symbolic names allowed to use loginAdministrative()."
     )
     String[] allowlist_bundles();
@@ -57,34 +57,32 @@ import static java.util.Arrays.asList;
 @Component(
         configurationPid = "org.apache.sling.jcr.base.internal.LoginAdminAllowlist.fragment",
         configurationPolicy = ConfigurationPolicy.REQUIRE,
-        service = WhitelistFragment.class
+        service = AllowListFragment.class
 )
 @Designate(ocd = Configuration.class, factory = true)
-public class WhitelistFragment {
+public class AllowListFragment {
 
-    private String name;
+    private final String name;
 
-    private Set<String> bundles;
+    private final Set<String> bundles;
 
-    @SuppressWarnings("unused")
-    public WhitelistFragment() {
-        // default constructor for SCR
+    /**
+     * Constructor for SCR
+     * @param config Configuration
+     */
+    @Activate
+    public AllowListFragment(final Configuration config) {
+        this.name = config.allowlist_name();
+        this.bundles = asSet(config.allowlist_bundles());
     }
 
     // constructor for tests and for backwards compatible deprecated fragments
-    WhitelistFragment(String name, String[] bundles) {
+    AllowListFragment(String name, String[] bundles) {
         this.name = name;
         this.bundles = asSet(bundles);
     }
 
-    @Activate
-    @SuppressWarnings("unused")
-    void activate(Configuration config) {
-        name = config.allowlist_name();
-        bundles = asSet(config.allowlist_bundles());
-    }
-
-    boolean allows(String bsn) {
+    boolean allows(final String bsn) {
         return bundles.contains(bsn);
     }
 
@@ -98,10 +96,10 @@ public class WhitelistFragment {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof WhitelistFragment)) {
+        if (!(o instanceof AllowListFragment)) {
             return false;
         }
-        final WhitelistFragment that = (WhitelistFragment) o;
+        final AllowListFragment that = (AllowListFragment) o;
         return name.equals(that.name)
                 && bundles.equals(that.bundles);
     }
