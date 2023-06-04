@@ -46,7 +46,18 @@ import static org.apache.sling.commons.osgi.PropertiesUtil.toStringArray;
  * The default configuration lets a few trusted Sling bundles
  * use the loginAdministrative method.
  */
-@Component(service = LoginAdminAllowList.class, configurationPid = LoginAdminAllowList.PID)
+@Component(service = LoginAdminAllowList.class, 
+    configurationPid = LoginAdminAllowList.PID,
+    reference = {
+        // ConfigurationUpdater is a required dependency to make sure that configurations are
+        // updated before this component is activated
+        @Reference(
+            name = "ConfigurationUpdater",
+            service = ConfigurationUpdater.class,
+            cardinality = ReferenceCardinality.MANDATORY
+        )
+    }
+)
 @Designate(
         ocd = LoginAdminAllowListConfiguration.class
 )

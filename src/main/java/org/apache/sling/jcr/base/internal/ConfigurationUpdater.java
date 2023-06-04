@@ -39,7 +39,7 @@ import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Component(service = ConfigurationListener.class)
+@Component(service = {ConfigurationListener.class, ConfigurationUpdater.class})
 public class ConfigurationUpdater implements ConfigurationListener {
 
     static final String LOGIN_ADMIN_WHITELIST_PID = "org.apache.sling.jcr.base.internal.LoginAdminWhitelist";
