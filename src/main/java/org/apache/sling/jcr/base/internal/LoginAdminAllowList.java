@@ -46,11 +46,13 @@ import static org.apache.sling.commons.osgi.PropertiesUtil.toStringArray;
  * The default configuration lets a few trusted Sling bundles
  * use the loginAdministrative method.
  */
-@Component(service = LoginAdminAllowList.class)
+@Component(service = LoginAdminAllowList.class, configurationPid = LoginAdminAllowList.PID)
 @Designate(
         ocd = LoginAdminAllowListConfiguration.class
 )
 public class LoginAdminAllowList {
+
+    public static final String PID = "org.apache.sling.jcr.base.LoginAdminAllowList";
 
     private static final Logger LOG = LoggerFactory.getLogger(LoginAdminAllowList.class);
 

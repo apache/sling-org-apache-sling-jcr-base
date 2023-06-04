@@ -55,13 +55,14 @@ import static java.util.Arrays.asList;
 }
 
 @Component(
-        configurationPid = "org.apache.sling.jcr.base.internal.LoginAdminAllowList.fragment",
+        configurationPid = AllowListFragment.FACTORY_PID,
         configurationPolicy = ConfigurationPolicy.REQUIRE,
         service = AllowListFragment.class
 )
 @Designate(ocd = Configuration.class, factory = true)
 public class AllowListFragment {
 
+    public static final String FACTORY_PID = "org.apache.sling.jcr.base.LoginAdminAllowList.fragment";
     private final String name;
 
     private final Set<String> bundles;

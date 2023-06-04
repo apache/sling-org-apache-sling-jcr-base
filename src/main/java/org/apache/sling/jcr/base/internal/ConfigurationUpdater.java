@@ -43,14 +43,15 @@ import org.slf4j.LoggerFactory;
 public class ConfigurationUpdater implements ConfigurationListener {
 
     static final String LOGIN_ADMIN_WHITELIST_PID = "org.apache.sling.jcr.base.internal.LoginAdminWhitelist";
-    static final String LOGIN_ADMIN_ALLOWLIST_PID = "org.apache.sling.jcr.base.internal.LoginAdminAllowList";
+    static final String LOGIN_ADMIN_ALLOWLIST_PID = LoginAdminAllowList.PID;
     private static final Map<String, String> LOGIN_ADMIN_WHITELIST_PROPS_TO_REPLACE = new HashMap<>();
     static {
         LOGIN_ADMIN_WHITELIST_PROPS_TO_REPLACE.put("whitelist.bypass", "allowlist.bypass");
         LOGIN_ADMIN_WHITELIST_PROPS_TO_REPLACE.put("whitelist.bundles.regexp", "allowlist.bundles.regexp");
     }
-    private static final String ALLOWLIST_FRAGMENT_PID = "org.apache.sling.jcr.base.internal.LoginAdminAllowList.fragment";
+
     private static final String WHITELIST_FRAGMENT_PID = "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment";
+    private static final String ALLOWLIST_FRAGMENT_PID = AllowListFragment.FACTORY_PID;
     private static final Map<String, String> FRAGMENT_PROPS_TO_REPLACE = new HashMap<>();
 
     static {

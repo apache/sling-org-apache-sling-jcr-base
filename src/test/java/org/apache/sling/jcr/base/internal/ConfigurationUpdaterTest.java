@@ -49,7 +49,7 @@ public class ConfigurationUpdaterTest {
         when(mockSourceConfiguration.getProperties()).thenReturn(sourceProperties);
 
         when(mockConfigurationAdmin.listConfigurations("(service.pid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist)")).thenReturn(new Configuration[] {mockSourceConfiguration});
-        when(mockConfigurationAdmin.getConfiguration("org.apache.sling.jcr.base.internal.LoginAdminAllowList", null)).thenReturn(mockTargetConfiguration);
+        when(mockConfigurationAdmin.getConfiguration(LoginAdminAllowList.PID, null)).thenReturn(mockTargetConfiguration);
 
         final Dictionary<String, Object> expectedProperties = new Hashtable<>();
         expectedProperties.put("allowlist.bypass", "whitelistNameValue");
@@ -59,7 +59,7 @@ public class ConfigurationUpdaterTest {
         new ConfigurationUpdater(mockConfigurationAdmin); 
 
         verify(mockConfigurationAdmin).listConfigurations("(service.pid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist)");
-        verify(mockConfigurationAdmin).getConfiguration("org.apache.sling.jcr.base.internal.LoginAdminAllowList", null);
+        verify(mockConfigurationAdmin).getConfiguration(LoginAdminAllowList.PID, null);
         final ArgumentCaptor<Dictionary> targetPropertiesCaptor = ArgumentCaptor.forClass(Dictionary.class);
         verify(mockTargetConfiguration).update(targetPropertiesCaptor.capture());
         assertEquals(expectedProperties, targetPropertiesCaptor.getValue());
@@ -79,7 +79,7 @@ public class ConfigurationUpdaterTest {
         when(mockSourceConfiguration.getFactoryPid()).thenReturn("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment");
         when(mockSourceConfiguration.getPid()).thenReturn("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~foo");
         when(mockConfigurationAdmin.listConfigurations("(service.factoryPid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment)")).thenReturn(new Configuration[] {mockSourceConfiguration});
-        when(mockConfigurationAdmin.getFactoryConfiguration("org.apache.sling.jcr.base.internal.LoginAdminAllowList.fragment", "foo", null)).thenReturn(mockTargetConfiguration);
+        when(mockConfigurationAdmin.getFactoryConfiguration(AllowListFragment.FACTORY_PID, "foo", null)).thenReturn(mockTargetConfiguration);
 
         final Dictionary<String, Object> expectedProperties = new Hashtable<>();
         expectedProperties.put("allowlist.name", "whitelistNameValue");
@@ -89,7 +89,7 @@ public class ConfigurationUpdaterTest {
         new ConfigurationUpdater(mockConfigurationAdmin); 
 
         verify(mockConfigurationAdmin).listConfigurations("(service.factoryPid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment)");
-        verify(mockConfigurationAdmin).getFactoryConfiguration("org.apache.sling.jcr.base.internal.LoginAdminAllowList.fragment", "foo", null);
+        verify(mockConfigurationAdmin).getFactoryConfiguration(AllowListFragment.FACTORY_PID, "foo", null);
         final ArgumentCaptor<Dictionary> targetPropertiesCaptor = ArgumentCaptor.forClass(Dictionary.class);
         verify(mockTargetConfiguration).update(targetPropertiesCaptor.capture());
         assertEquals(expectedProperties, targetPropertiesCaptor.getValue());
@@ -109,7 +109,7 @@ public class ConfigurationUpdaterTest {
        when(mockSourceConfiguration.getFactoryPid()).thenReturn("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment");
        when(mockSourceConfiguration.getPid()).thenReturn("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment-randomid");
        when(mockConfigurationAdmin.listConfigurations("(service.factoryPid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment)")).thenReturn(new Configuration[] {mockSourceConfiguration});
-       when(mockConfigurationAdmin.createFactoryConfiguration("org.apache.sling.jcr.base.internal.LoginAdminAllowList.fragment", null)).thenReturn(mockTargetConfiguration);
+       when(mockConfigurationAdmin.createFactoryConfiguration(AllowListFragment.FACTORY_PID, null)).thenReturn(mockTargetConfiguration);
 
        final Dictionary<String, Object> expectedProperties = new Hashtable<>();
        expectedProperties.put("allowlist.name", "whitelistNameValue");
@@ -119,7 +119,7 @@ public class ConfigurationUpdaterTest {
        new ConfigurationUpdater(mockConfigurationAdmin); 
 
        verify(mockConfigurationAdmin).listConfigurations("(service.factoryPid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment)");
-       verify(mockConfigurationAdmin).createFactoryConfiguration("org.apache.sling.jcr.base.internal.LoginAdminAllowList.fragment", null);
+       verify(mockConfigurationAdmin).createFactoryConfiguration(AllowListFragment.FACTORY_PID, null);
        final ArgumentCaptor<Dictionary> targetPropertiesCaptor = ArgumentCaptor.forClass(Dictionary.class);
        verify(mockTargetConfiguration).update(targetPropertiesCaptor.capture());
        assertEquals(expectedProperties, targetPropertiesCaptor.getValue());
