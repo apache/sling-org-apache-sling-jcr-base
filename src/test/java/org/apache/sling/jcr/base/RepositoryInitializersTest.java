@@ -83,7 +83,7 @@ public class RepositoryInitializersTest {
     private void registerInitializer(String id, int serviceRanking) {
         final SlingRepositoryInitializer init = new TestInitializer(id);
         final Hashtable<String, Object> props = new Hashtable<String, Object>();
-        props.put(Constants.SERVICE_RANKING, new Integer(serviceRanking));
+        props.put(Constants.SERVICE_RANKING, serviceRanking);
         context.bundleContext().registerService(SlingRepositoryInitializer.class.getName(), init, props);
     }
     

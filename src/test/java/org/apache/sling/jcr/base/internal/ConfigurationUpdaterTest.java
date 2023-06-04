@@ -56,7 +56,7 @@ public class ConfigurationUpdaterTest {
         expectedProperties.put("allowlist.bundles.regexp", "whitelistBundleValue");
         expectedProperties.put("prop", "value");
 
-        new ConfigurationUpdaterEventListener(mockConfigurationAdmin); 
+        new ConfigurationUpdater(mockConfigurationAdmin); 
 
         verify(mockConfigurationAdmin).listConfigurations("(service.pid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist)");
         verify(mockConfigurationAdmin).getConfiguration("org.apache.sling.jcr.base.internal.LoginAdminAllowList", null);
@@ -86,7 +86,7 @@ public class ConfigurationUpdaterTest {
         expectedProperties.put("allowlist.bundles", "whitelistBundleValue");
         expectedProperties.put("prop", "value");
 
-        new ConfigurationUpdaterEventListener(mockConfigurationAdmin); 
+        new ConfigurationUpdater(mockConfigurationAdmin); 
 
         verify(mockConfigurationAdmin).listConfigurations("(service.factoryPid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment)");
         verify(mockConfigurationAdmin).getFactoryConfiguration("org.apache.sling.jcr.base.internal.LoginAdminAllowList.fragment", "foo", null);
@@ -116,7 +116,7 @@ public class ConfigurationUpdaterTest {
        expectedProperties.put("allowlist.bundles", "whitelistBundleValue");
        expectedProperties.put("prop", "value");
 
-       new ConfigurationUpdaterEventListener(mockConfigurationAdmin); 
+       new ConfigurationUpdater(mockConfigurationAdmin); 
 
        verify(mockConfigurationAdmin).listConfigurations("(service.factoryPid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment)");
        verify(mockConfigurationAdmin).createFactoryConfiguration("org.apache.sling.jcr.base.internal.LoginAdminAllowList.fragment", null);

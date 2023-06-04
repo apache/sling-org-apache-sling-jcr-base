@@ -19,9 +19,12 @@
 package org.apache.sling.jcr.base.internal;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Dictionary;
+import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 
 import org.osgi.framework.Constants;
@@ -29,62 +32,53 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.service.cm.Configuration;
 import org.osgi.service.cm.ConfigurationAdmin;
 import org.osgi.service.cm.ConfigurationEvent;
+import org.osgi.service.cm.ConfigurationListener;
+import org.osgi.service.component.annotations.Activate;
+import org.osgi.service.component.annotations.Component;
+import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class ConfigurationUpdater {
+@Component(service = ConfigurationListener.class)
+public class ConfigurationUpdater implements ConfigurationListener {
+
+    static final String LOGIN_ADMIN_WHITELIST_PID = "org.apache.sling.jcr.base.internal.LoginAdminWhitelist";
+    static final String LOGIN_ADMIN_ALLOWLIST_PID = "org.apache.sling.jcr.base.internal.LoginAdminAllowList";
+    private static final Map<String, String> LOGIN_ADMIN_WHITELIST_PROPS_TO_REPLACE = new HashMap<>();
+    static {
+        LOGIN_ADMIN_WHITELIST_PROPS_TO_REPLACE.put("whitelist.bypass", "allowlist.bypass");
+        LOGIN_ADMIN_WHITELIST_PROPS_TO_REPLACE.put("whitelist.bundles.regexp", "allowlist.bundles.regexp");
+    }
+    private static final String ALLOWLIST_FRAGMENT_PID = "org.apache.sling.jcr.base.internal.LoginAdminAllowList.fragment";
+    private static final String WHITELIST_FRAGMENT_PID = "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment";
+    private static final Map<String, String> FRAGMENT_PROPS_TO_REPLACE = new HashMap<>();
+
+    static {
+        FRAGMENT_PROPS_TO_REPLACE.put("whitelist.name", "allowlist.name");
+        FRAGMENT_PROPS_TO_REPLACE.put("whitelist.bundles", "allowlist.bundles");
+    }
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
 
-    protected final String oldPid;
-    protected final String newPid;
-    protected final Map<String, String> propsToReplace;
+    private final List<Updater> configurationUpdaterList = new ArrayList<>();
 
-    public ConfigurationUpdater(final String oldPid, final String newPid, final Map<String, String> propsToReplace) {
-        this.oldPid = oldPid;
-        this.newPid = newPid;
-        this.propsToReplace = propsToReplace;
+    private final ConfigurationAdmin configurationAdmin;
+
+    @Activate
+    public ConfigurationUpdater(@Reference ConfigurationAdmin configurationAdmin) {
+        this.configurationAdmin = configurationAdmin;
+        configurationUpdaterList.add(new PidConfigurationUpdater(LOGIN_ADMIN_WHITELIST_PID, LOGIN_ADMIN_ALLOWLIST_PID, LOGIN_ADMIN_WHITELIST_PROPS_TO_REPLACE));
+        configurationUpdaterList.add(new FactoryPidConfigurationUpdater(WHITELIST_FRAGMENT_PID, ALLOWLIST_FRAGMENT_PID, FRAGMENT_PROPS_TO_REPLACE));
+
+        configurationUpdaterList.forEach(configurationUpdater -> configurationUpdater.updateProps());
     }
 
-    public static ConfigurationUpdater forPid(final String oldPid, final String newPid, final Map<String, String> propsToReplace) {
-        return new PidConfigurationUpdater(oldPid, newPid, propsToReplace);
-    }
-
-    public static ConfigurationUpdater forFactoryPid(final String oldPid, final String newPid, final Map<String, String> propsToReplace) {
-        return new FactoryPidConfigurationUpdater(oldPid, newPid, propsToReplace);
-    }
-
-    public abstract void updateProps(ConfigurationAdmin configurationAdmin, ConfigurationEvent event);
-
-    protected abstract void updateProps(ConfigurationAdmin configurationAdmin);
-
-    protected abstract Configuration createConfiguration(ConfigurationAdmin configurationAdmin, String oldPid) throws IOException;
-
-    protected void updateProps(final Configuration sourceConfig, ConfigurationAdmin configurationAdmin) {
-        final Dictionary<String, Object> sourceProps = sourceConfig.getProperties();
-        final Dictionary<String, Object> targetProps = new Hashtable<>();
-        for(final String name : Collections.list(sourceProps.keys())) {
-            final Object value = sourceProps.get(name);
-            String newName = this.propsToReplace.get(name);
-            if (newName == null) {
-                newName = name;
-            } else {
-                logger.debug("Received configuration value: {} for old key: {}. Setting the new property {} to {}",
-                    value, name, newName, value);
-            }
-            targetProps.put(newName, value);
-        }
-        if (!targetProps.isEmpty()) {
-            try {
-                final Configuration cfg = this.createConfiguration(configurationAdmin, sourceConfig.getPid());
-                if (cfg==null) return;
-                logger.info("Creating new configuration with PID {} for source PID: {}", cfg.getPid(), sourceConfig.getPid());
-                cfg.update(targetProps);
-                logger.info("Deleting source configuration wuth PID {} after it was migrated", sourceConfig.getPid());
-                sourceConfig.delete();
-            } catch (final IOException e) {
-                logger.warn("Failed to update configuration with PID {}", sourceConfig.getPid(), e);
-            }
+    @Override
+    public void configurationEvent(final ConfigurationEvent event) {
+        if ( event.getType() == ConfigurationEvent.CM_UPDATED ) {
+            configurationUpdaterList.forEach(configurationUpdater -> {
+                configurationUpdater.updateProps(event);
+            });
         }
     }
 
@@ -98,25 +92,66 @@ public abstract class ConfigurationUpdater {
                 .replace(")", "\\)");
     }
     
-    private static class PidConfigurationUpdater extends ConfigurationUpdater {
+    protected abstract class Updater {
+
+        protected final String oldPid;
+        protected final String newPid;
+        protected final Map<String, String> propsToReplace;
+
+        public Updater(final String oldPid, final String newPid, final Map<String, String> propsToReplace) {
+            this.oldPid = oldPid;
+            this.newPid = newPid;
+            this.propsToReplace = propsToReplace;
+        }
+
+        protected abstract void updateProps(ConfigurationEvent event);
+
+        protected abstract void updateProps();
+
+        protected abstract Configuration createConfiguration(String oldPid) throws IOException;
+
+        /**
+         * Update a configuration
+         */
+        protected void updateProps(final Configuration sourceConfig, ConfigurationAdmin configurationAdmin) {
+            final Dictionary<String, Object> sourceProps = sourceConfig.getProperties();
+            final Dictionary<String, Object> targetProps = new Hashtable<>();
+            for(final String name : Collections.list(sourceProps.keys())) {
+                targetProps.put(this.propsToReplace.getOrDefault(name, name), sourceProps.get(name));
+            }
+            try {
+                final Configuration cfg = this.createConfiguration(sourceConfig.getPid());
+                if (cfg==null) return;
+                logger.info("Creating new configuration with PID {} for source PID: {}", cfg.getPid(), sourceConfig.getPid());
+                cfg.update(targetProps);
+                logger.info("Deleting source configuration wuth PID {} after it was migrated", sourceConfig.getPid());
+                sourceConfig.delete();
+            } catch (final IOException e) {
+                logger.warn("Failed to update configuration with PID {}", sourceConfig.getPid(), e);
+            }
+        }
+    }
+
+    private class PidConfigurationUpdater extends Updater {
 
         public PidConfigurationUpdater(final String oldPid, final String newPid, final Map<String, String> propsToReplace) {
             super(oldPid, newPid, propsToReplace);
         }
 
         @Override
-        public void updateProps(final ConfigurationAdmin configurationAdmin, final ConfigurationEvent event) {
+        protected void updateProps(final ConfigurationEvent event) {
             if (this.oldPid.equals(event.getPid())) {
-                this.updateProps(configurationAdmin);
+                this.updateProps();
             }
         }
 
-        protected Configuration createConfiguration(final ConfigurationAdmin configurationAdmin, final String oldPid) throws IOException {
+        @Override
+        protected Configuration createConfiguration(final String oldPid) throws IOException {
             return configurationAdmin.getConfiguration(newPid, null);
         }
 
         @Override
-        protected void updateProps(final ConfigurationAdmin configurationAdmin) {
+        protected void updateProps() {
             final String filter = String.format("(%s=%s)", Constants.SERVICE_PID, encode(this.oldPid));
             try {
                 final Configuration[] configs = configurationAdmin.listConfigurations(filter);
@@ -124,27 +159,27 @@ public abstract class ConfigurationUpdater {
                     this.updateProps(configs[0], configurationAdmin);
                 }
             } catch (final IOException | InvalidSyntaxException e) {
-                this.logger.error("Failed to retrieve configuration for PID: {}. Configuration is not updated to PID {}.",
+                logger.error("Failed to retrieve configuration for PID: {}. Configuration is not updated to PID {}.",
                     oldPid, newPid, e);
             }
         }
     }
 
-    private static class FactoryPidConfigurationUpdater extends ConfigurationUpdater {
+    private class FactoryPidConfigurationUpdater extends Updater {
 
         public FactoryPidConfigurationUpdater(final String oldPid, final String newPid, final Map<String, String> propsToReplace) {
             super(oldPid, newPid, propsToReplace);
         }
 
         @Override
-        public void updateProps(final ConfigurationAdmin configurationAdmin, final ConfigurationEvent event) {
+        protected void updateProps(final ConfigurationEvent event) {
             if (this.oldPid.equals(event.getFactoryPid())) {
-                this.updateProps(configurationAdmin);
+                this.updateProps();
             }
         }
 
         @Override
-        protected void updateProps(final ConfigurationAdmin configurationAdmin) {
+        protected void updateProps() {
             final String filter = String.format("(%s=%s)", ConfigurationAdmin.SERVICE_FACTORYPID, encode(this.oldPid));
             try {
                 final Configuration[] configs = configurationAdmin.listConfigurations(filter);
@@ -158,7 +193,8 @@ public abstract class ConfigurationUpdater {
             }
         }
 
-        protected Configuration createConfiguration(final ConfigurationAdmin configurationAdmin, final String oldFullPid) throws IOException {
+        @Override
+        protected Configuration createConfiguration(final String oldFullPid) throws IOException {
             final String prefix = this.oldPid.concat("~");
             if (oldFullPid.startsWith(prefix)) {
                 return configurationAdmin.getFactoryConfiguration(newPid, oldFullPid.substring(prefix.length()), null);
