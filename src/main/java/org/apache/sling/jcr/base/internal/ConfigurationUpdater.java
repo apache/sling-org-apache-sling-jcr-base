@@ -39,6 +39,11 @@ import org.osgi.service.component.annotations.Reference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * This class is updating configuration and configuration property names to use
+ * more inclusive language.
+ * See https://issues.apache.org/jira/browse/SLING-11741
+ */
 @Component(service = {ConfigurationListener.class, ConfigurationUpdater.class})
 public class ConfigurationUpdater implements ConfigurationListener {
 
@@ -123,10 +128,11 @@ public class ConfigurationUpdater implements ConfigurationListener {
             try {
                 final Configuration cfg = this.createConfiguration(sourceConfig.getPid());
                 if (cfg==null) return;
-                logger.info("Creating new configuration with PID {} for source PID: {}", cfg.getPid(), sourceConfig.getPid());
                 cfg.update(targetProps);
-                logger.info("Deleting source configuration wuth PID {} after it was migrated", sourceConfig.getPid());
                 sourceConfig.delete();
+                logger.info("Updated configuration with PID {} to new configuration with PID {}. "+
+                "Please see https://sling.apache.org/documentation/the-sling-engine/service-authentication.html for more information.", 
+                sourceConfig.getPid(), cfg.getPid());
             } catch (final IOException e) {
                 logger.warn("Failed to update configuration with PID {}", sourceConfig.getPid(), e);
             }
