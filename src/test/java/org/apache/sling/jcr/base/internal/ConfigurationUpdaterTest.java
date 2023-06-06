@@ -32,6 +32,7 @@ import org.osgi.service.cm.ConfigurationAdmin;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -67,6 +68,28 @@ public class ConfigurationUpdaterTest {
     }
 
     @Test
+    public void testUpdateProps_whenNewConfigExists() throws IOException, InvalidSyntaxException {
+        final ConfigurationAdmin mockConfigurationAdmin = mock(ConfigurationAdmin.class);
+        final Configuration mockSourceConfiguration = mock(Configuration.class);
+        final Configuration mockTargetConfiguration = mock(Configuration.class);
+        final Dictionary<String, Object> sourceProperties = new Hashtable<>();
+        sourceProperties.put("whitelist.bypass", "whitelistNameValue");
+        sourceProperties.put("whitelist.bundles.regexp", "whitelistBundleValue");
+        sourceProperties.put("prop", "value");
+        when(mockSourceConfiguration.getProperties()).thenReturn(sourceProperties);
+
+        when(mockConfigurationAdmin.listConfigurations("(service.pid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist)")).thenReturn(new Configuration[] {mockSourceConfiguration});
+        when(mockConfigurationAdmin.listConfigurations("(service.pid=" + LoginAdminAllowList.PID + ")")).thenReturn(new Configuration[] {mockTargetConfiguration});
+
+        new ConfigurationUpdater(mockConfigurationAdmin); 
+
+        verify(mockConfigurationAdmin).listConfigurations("(service.pid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist)");
+        verify(mockConfigurationAdmin).listConfigurations("(service.pid=" + LoginAdminAllowList.PID + ")");
+        verify(mockConfigurationAdmin).listConfigurations("(service.factoryPid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment)");
+        verifyNoMoreInteractions(mockConfigurationAdmin);
+    }
+
+    @Test
     public void testUpdatePropsForNamedFactoryPid_whenFragmentOldPropertiesAreProvided_thenNewPropertiesAreConfigured() throws InvalidSyntaxException, IOException {
         final ConfigurationAdmin mockConfigurationAdmin = mock(ConfigurationAdmin.class);
         final Configuration mockSourceConfiguration = mock(Configuration.class);
@@ -94,6 +117,30 @@ public class ConfigurationUpdaterTest {
         verify(mockTargetConfiguration).update(targetPropertiesCaptor.capture());
         assertEquals(expectedProperties, targetPropertiesCaptor.getValue());
         verify(mockSourceConfiguration).delete();
+   }
+
+   @Test
+   public void testUpdateNamedFactoryConfig_whenNewConfigExists() throws IOException, InvalidSyntaxException {
+       final ConfigurationAdmin mockConfigurationAdmin = mock(ConfigurationAdmin.class);
+       final Configuration mockSourceConfiguration = mock(Configuration.class);
+       final Configuration mockTargetConfiguration = mock(Configuration.class);
+       final Dictionary<String, Object> sourceProperties = new Hashtable<>();
+       sourceProperties.put("whitelist.bypass", "whitelistNameValue");
+       sourceProperties.put("whitelist.bundles.regexp", "whitelistBundleValue");
+       sourceProperties.put("prop", "value");
+       when(mockSourceConfiguration.getProperties()).thenReturn(sourceProperties);
+       when(mockSourceConfiguration.getFactoryPid()).thenReturn("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment");
+       when(mockSourceConfiguration.getPid()).thenReturn("org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment~foo");
+
+       when(mockConfigurationAdmin.listConfigurations("(service.factoryPid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment)")).thenReturn(new Configuration[] {mockSourceConfiguration});
+       when(mockConfigurationAdmin.listConfigurations("(service.pid=" + AllowListFragment.FACTORY_PID + "~foo)")).thenReturn(new Configuration[] {mockTargetConfiguration});
+
+       new ConfigurationUpdater(mockConfigurationAdmin); 
+
+       verify(mockConfigurationAdmin).listConfigurations("(service.pid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist)");
+       verify(mockConfigurationAdmin).listConfigurations("(service.factoryPid=org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment)");
+       verify(mockConfigurationAdmin).listConfigurations("(service.pid=" + AllowListFragment.FACTORY_PID + "~foo)");
+       verifyNoMoreInteractions(mockConfigurationAdmin);
    }
 
    @Test

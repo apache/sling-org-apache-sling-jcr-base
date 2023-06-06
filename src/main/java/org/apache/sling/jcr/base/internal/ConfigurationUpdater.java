@@ -127,12 +127,17 @@ public class ConfigurationUpdater implements ConfigurationListener {
             }
             try {
                 final Configuration cfg = this.createConfiguration(sourceConfig.getPid());
-                if (cfg==null) return;
-                cfg.update(targetProps);
-                sourceConfig.delete();
-                logger.info("Updated configuration with PID {} to new configuration with PID {}. "+
-                "Please see https://sling.apache.org/documentation/the-sling-engine/service-authentication.html for more information.", 
-                sourceConfig.getPid(), cfg.getPid());
+                if (cfg == null) {
+                    logger.warn("Not updating configuration with PID {} to new configuration with PID {} as the new one already exists."+
+                        "Please update your configurations. See https://sling.apache.org/documentation/the-sling-engine/service-authentication.html for more information.", 
+                        sourceConfig.getPid(), this.newPid);
+                } else {
+                    cfg.update(targetProps);
+                    sourceConfig.delete();
+                    logger.warn("Updated configuration with PID {} to new configuration with PID {}. "+
+                        "Please update your configurations. See https://sling.apache.org/documentation/the-sling-engine/service-authentication.html for more information.", 
+                        sourceConfig.getPid(), cfg.getPid());    
+                }
             } catch (final IOException e) {
                 logger.warn("Failed to update configuration with PID {}", sourceConfig.getPid(), e);
             }
@@ -154,6 +159,15 @@ public class ConfigurationUpdater implements ConfigurationListener {
 
         @Override
         protected Configuration createConfiguration(final String oldPid) throws IOException {
+            final String filter = String.format("(%s=%s)", Constants.SERVICE_PID, encode(this.newPid));
+            try {
+                final Configuration[] configs = configurationAdmin.listConfigurations(filter);
+                if (configs != null && configs.length > 0) {
+                    return null;
+                }
+            } catch (final IOException | InvalidSyntaxException e) {
+                // ignore
+            }
             return configurationAdmin.getConfiguration(newPid, null);
         }
 
@@ -204,7 +218,17 @@ public class ConfigurationUpdater implements ConfigurationListener {
         protected Configuration createConfiguration(final String oldFullPid) throws IOException {
             final String prefix = this.oldPid.concat("~");
             if (oldFullPid.startsWith(prefix)) {
-                return configurationAdmin.getFactoryConfiguration(newPid, oldFullPid.substring(prefix.length()), null);
+                final String name = oldFullPid.substring(prefix.length());
+                final String filter = String.format("(%s=%s~%s)", Constants.SERVICE_PID, encode(this.newPid), encode(name));
+                try {
+                    final Configuration[] configs = configurationAdmin.listConfigurations(filter);
+                    if (configs != null && configs.length > 0) {
+                        return null;
+                    }
+                } catch (final IOException | InvalidSyntaxException e) {
+                    // ignore
+                }
+                return configurationAdmin.getFactoryConfiguration(newPid, name, null);
             }
             return configurationAdmin.createFactoryConfiguration(newPid, null);
         }
