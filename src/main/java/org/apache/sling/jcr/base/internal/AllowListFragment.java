@@ -33,8 +33,8 @@ import static java.util.Arrays.asList;
 
 @ObjectClassDefinition(
         name = "Apache Sling Login Admin Allow List Configuration Fragment",
-        description = "Allow list configuration fragments contribute a list of allow listed bundle symbolic " +
-                "names to the Login Admin Allow List. This allows for modularisation of the allow list."
+        description = "This list of Bundle Symbolic Names is added to the list of bundles which are allowed " +
+            "to use Administrative Login. The full list is built in a modular way out of all such configuration fragments."
 )
 @interface Configuration {
 
