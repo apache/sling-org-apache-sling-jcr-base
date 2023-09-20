@@ -22,6 +22,7 @@ import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
 @ObjectClassDefinition(
+    pid = LoginAdminAllowList.PID,
     name = "Apache Sling Login Admin Allowlist",
     description = "Defines which bundles can use SlingRepository.loginAdministrative()"
 )

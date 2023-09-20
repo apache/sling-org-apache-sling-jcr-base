@@ -33,11 +33,9 @@ import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ReferenceCardinality;
 import org.osgi.service.component.annotations.ReferencePolicy;
 import org.osgi.service.component.annotations.ReferencePolicyOption;
-import org.osgi.service.metatype.annotations.Designate;
+import org.osgi.util.converter.Converters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.sling.commons.osgi.PropertiesUtil.toStringArray;
 
 /**
  * Allow list that defines which bundles can use the
@@ -47,34 +45,28 @@ import static org.apache.sling.commons.osgi.PropertiesUtil.toStringArray;
  * use the loginAdministrative method.
  */
 @Component(service = LoginAdminAllowList.class, 
-    configurationPid = LoginAdminAllowList.PID,
-    reference = {
-        // ConfigurationUpdater is a required dependency to make sure that configurations are
-        // updated before this component is activated
-        @Reference(
-            name = "ConfigurationUpdater",
-            service = ConfigurationUpdater.class,
-            cardinality = ReferenceCardinality.MANDATORY
-        )
-    }
-)
-@Designate(
-        ocd = LoginAdminAllowListConfiguration.class
+    configurationPid = {LoginAdminAllowList.PID, LoginAdminAllowList.LEGACY_PID}
 )
 public class LoginAdminAllowList {
 
     public static final String PID = "org.apache.sling.jcr.base.LoginAdminAllowList";
 
-    private static final Logger LOG = LoggerFactory.getLogger(LoginAdminAllowList.class);
+    public static final String LEGACY_PID = "org.apache.sling.jcr.base.internal.LoginAdminWhitelist";
+
+    static final Logger LOG = LoggerFactory.getLogger(LoginAdminAllowList.class);
+
+    // for backwards compatibility only (read properties directly to prevent them from appearing in the metatype)
+    private static final String LEGACY_BYPASS_PROPERTY = "whitelist.bypass";
+
+    private static final String LEGACY_BUNDLES_PROPERTY = "whitelist.bundles.regexp";
+
+    private static final String PROP_LEGACY_BUNDLES_DEFAULT = "whitelist.bundles.default";
+
+    private static final String PROP_LEGACY_BUNDLES_ADDITIONAL = "whitelist.bundles.additional";
 
     private volatile ConfigurationState config;
 
     private final List<AllowListFragment> allowListFragments = new CopyOnWriteArrayList<AllowListFragment>();
-
-    // for backwards compatibility only (read properties directly to prevent them from appearing in the metatype)
-    private static final String PROP_WHITELIST_BUNDLES_DEFAULT = "whitelist.bundles.default";
-
-    private static final String PROP_WHITELIST_BUNDLES_ADDITIONAL = "whitelist.bundles.additional";
 
     private final Map<String, AllowListFragment> backwardsCompatibleFragments =
             new ConcurrentHashMap<String, AllowListFragment>();
@@ -83,23 +75,22 @@ public class LoginAdminAllowList {
             cardinality = ReferenceCardinality.MULTIPLE,
             policy = ReferencePolicy.DYNAMIC,
             policyOption = ReferencePolicyOption.GREEDY
-    ) @SuppressWarnings("unused")
+    )
     void bindAllowListFragment(AllowListFragment fragment) {
         allowListFragments.add(fragment);
         LOG.info("AllowListFragment added '{}'", fragment);
     }
 
-    @SuppressWarnings("unused")
     void unbindAllowListFragment(AllowListFragment fragment) {
         allowListFragments.remove(fragment);
         LOG.info("AllowListFragment removed '{}'", fragment);
     }
 
-    @Activate @Modified @SuppressWarnings("unused")
-    void configure(LoginAdminAllowListConfiguration configuration, Map<String, Object> properties) {
-        this.config = new ConfigurationState(configuration);
-        ensureBackwardsCompatibility(properties, PROP_WHITELIST_BUNDLES_DEFAULT);
-        ensureBackwardsCompatibility(properties, PROP_WHITELIST_BUNDLES_ADDITIONAL);
+    @Activate @Modified
+    void configure(final LoginAdminAllowListConfiguration configuration, final Map<String, Object> properties) {
+        this.config = new ConfigurationState(configuration, properties);
+        ensureBackwardsCompatibility(properties, PROP_LEGACY_BUNDLES_DEFAULT);
+        ensureBackwardsCompatibility(properties, PROP_LEGACY_BUNDLES_ADDITIONAL);
     }
 
     public boolean allowLoginAdministrative(Bundle b) {
@@ -133,24 +124,47 @@ public class LoginAdminAllowList {
     }
 
     // encapsulate configuration state for atomic configuration updates
-    private static class ConfigurationState {
+    static class ConfigurationState {
 
-        private final boolean bypassAllowList;
+        public final boolean bypassAllowList;
 
-        private final Pattern allowListRegexp;
+        public final Pattern allowListRegexp;
 
-        private ConfigurationState(final LoginAdminAllowListConfiguration config) {
-            final String regexp = config.allowlist_bundles_regexp();
-            if(regexp.trim().length() > 0) {
-                allowListRegexp = Pattern.compile(regexp);
-                LOG.warn("A 'allowlist.bundles.regexp' is configured, this is NOT RECOMMENDED for production: {}",
-                        allowListRegexp);
-            } else {
-                allowListRegexp = null;
+        ConfigurationState(final LoginAdminAllowListConfiguration config, final Map<String, Object> properties) {
+            // first check for legacy properties
+            boolean bypass = config.allowlist_bypass();
+            final Object legacyBypassObject = properties.get(LEGACY_BYPASS_PROPERTY);
+            if (legacyBypassObject != null) {
+                LOG.warn("Using deprecated configuration property '{}' from configuration '{}'. " +
+                    "Update your configuration to use configuration '{}' and property '{}' instead.", 
+                    LEGACY_BYPASS_PROPERTY, LEGACY_PID, PID, "allowlist.bypass");
+                bypass = Converters.standardConverter().convert(legacyBypassObject).defaultValue(false).to(Boolean.class);
+            }
+            String legacyRegexp = null;
+            final Object legacyBundlesObject = properties.get(LEGACY_BUNDLES_PROPERTY);
+            if (legacyBypassObject != null) {
+                LOG.warn("Using deprecated configuration property '{}' from configuration '{}'. " +
+                    "Update your configuration to use configuration '{}' and property '{}' instead.", 
+                    LEGACY_BUNDLES_PROPERTY, LEGACY_PID, PID, "allowlist.bundles.regexp");
+                legacyRegexp = Converters.standardConverter().convert(legacyBundlesObject).to(String.class);
             }
 
-            bypassAllowList = config.allowlist_bypass();
-            if(bypassAllowList) {
+            final String regexp = config.allowlist_bundles_regexp();
+            if (regexp.trim().length() > 0) {
+                if (legacyRegexp != null) {
+                    LOG.warn("Both deprecated configuration property '{}' and configuration property '{}' are set. " +
+                        "The deprecated property '{}' is ignored.", 
+                        LEGACY_BUNDLES_PROPERTY, "allowlist.bundles.regexp", LEGACY_BUNDLES_PROPERTY);
+                }
+                this.allowListRegexp = Pattern.compile(regexp);
+            } else {
+                this.allowListRegexp = legacyRegexp != null ? Pattern.compile(legacyRegexp) : null;
+            }
+            if (this.allowListRegexp != null) {
+                LOG.warn("A 'allowlist.bundles.regexp' is configured, this is NOT RECOMMENDED for production: {}", allowListRegexp);
+            }
+            this.bypassAllowList = bypass;
+            if (this.bypassAllowList) {
                 LOG.info("bypassAllowlist=true, allowlisted BSNs=<ALL>");
                 LOG.warn("All bundles are allowed to use loginAdministrative due to the 'allowlist.bypass' " +
                         "configuration of this service. This is NOT RECOMMENDED, for security reasons."
@@ -159,12 +173,11 @@ public class LoginAdminAllowList {
         }
     }
 
-    @SuppressWarnings("deprecated")
     private void ensureBackwardsCompatibility(final Map<String, Object> properties, final String propertyName) {
         final AllowListFragment oldFragment = backwardsCompatibleFragments.remove(propertyName);
         
-        final String[] bsns = toStringArray(properties.get(propertyName), new String[0]);
-        if (bsns.length != 0) {
+        final String[] bsns = Converters.standardConverter().convert(properties.get(propertyName)).to(String[].class);        
+        if (bsns != null && bsns.length != 0) {
             LOG.warn("Using deprecated configuration property '{}'", propertyName);
             final AllowListFragment fragment = new AllowListFragment("deprecated-" + propertyName, bsns);
             bindAllowListFragment(fragment);

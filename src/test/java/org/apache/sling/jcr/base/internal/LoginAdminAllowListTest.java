@@ -19,6 +19,8 @@
 package org.apache.sling.jcr.base.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -187,5 +189,31 @@ public class LoginAdminAllowListTest {
         LoginAdminAllowListConfiguration configuration =
                 ConfigAnnotationUtil.fromDictionary(LoginAdminAllowListConfiguration.class, props);
         allowList.configure(configuration, props);
+    }
+
+    @Test
+    public void testLegacyConfigurationOnly() {
+        final LoginAdminAllowListConfiguration cfg = Mockito.mock(LoginAdminAllowListConfiguration.class);
+        when(cfg.allowlist_bypass()).thenReturn(false);
+        when(cfg.allowlist_bundles_regexp()).thenReturn("");
+        final Hashtable<String, Object> props = new Hashtable<>();
+        props.put("whitelist.bypass", true);
+        props.put("whitelist.bundles.regexp", "foo.*bar");
+        final LoginAdminAllowList.ConfigurationState state = new LoginAdminAllowList.ConfigurationState(cfg, props);
+        assertTrue(state.bypassAllowList);
+        assertEquals("foo.*bar", state.allowListRegexp.pattern());
+    }
+
+    @Test
+    public void testLegacyAndConfiguration() {
+        final LoginAdminAllowListConfiguration cfg = Mockito.mock(LoginAdminAllowListConfiguration.class);
+        when(cfg.allowlist_bypass()).thenReturn(true);
+        when(cfg.allowlist_bundles_regexp()).thenReturn("bar.foo*");
+        final Hashtable<String, Object> props = new Hashtable<>();
+        props.put("whitelist.bypass", false);
+        props.put("whitelist.bundles.regexp", "foo.*bar");
+        final LoginAdminAllowList.ConfigurationState state = new LoginAdminAllowList.ConfigurationState(cfg, props);
+        assertFalse(state.bypassAllowList);
+        assertEquals("bar.foo*", state.allowListRegexp.pattern());
     }
 }

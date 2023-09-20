@@ -63,9 +63,10 @@ import static java.util.Arrays.asList;
 public class AllowListFragment {
 
     public static final String FACTORY_PID = "org.apache.sling.jcr.base.LoginAdminAllowList.fragment";
-    private final String name;
 
-    private final Set<String> bundles;
+    final String name;
+
+    final Set<String> bundles;
 
     /**
      * Constructor for SCR
