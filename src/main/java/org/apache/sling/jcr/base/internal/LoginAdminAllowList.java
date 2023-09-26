@@ -152,7 +152,7 @@ public class LoginAdminAllowList {
             final String regexp = config.allowlist_bundles_regexp();
             if (regexp.trim().length() > 0) {
                 if (legacyRegexp != null) {
-                    LOG.warn("Both deprecated configuration property '{}' and configuration property '{}' are set. " +
+                    LOG.warn("Both deprecated configuration property '{}' and non-deprecated configuration property '{}' are set. " +
                         "The deprecated property '{}' is ignored.", 
                         LEGACY_BUNDLES_PROPERTY, "allowlist.bundles.regexp", LEGACY_BUNDLES_PROPERTY);
                 }
@@ -165,7 +165,7 @@ public class LoginAdminAllowList {
             }
             this.bypassAllowList = bypass;
             if (this.bypassAllowList) {
-                LOG.info("bypassAllowlist=true, allowlisted BSNs=<ALL>");
+                LOG.info("allowlist.bypass=true, allowed BSNs=<ALL>");
                 LOG.warn("All bundles are allowed to use loginAdministrative due to the 'allowlist.bypass' " +
                         "configuration of this service. This is NOT RECOMMENDED, for security reasons."
                 );

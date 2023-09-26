@@ -19,6 +19,7 @@
 package org.apache.sling.jcr.base.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
@@ -27,24 +28,34 @@ import java.util.Map;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.osgi.util.converter.Converters;
 
 public class LegacyFragmentTest {
 
-    @Test
-    public void testFragmentBinding() {
-        final LoginAdminAllowList allowlist = Mockito.mock(LoginAdminAllowList.class);
+    private final LegacyFragment.Configuration configuration;
+    {
         final Map<String, Object> props = new HashMap<>();
         props.put("whitelist.name", "test");
         props.put("whitelist.bundles", new String[] { "org.apache.sling.test" });
-        final LegacyFragment fragment = new LegacyFragment(allowlist, props);
-        final ArgumentCaptor<AllowListFragment> captor = ArgumentCaptor.forClass(AllowListFragment.class);
-        Mockito.verify(allowlist).bindAllowListFragment(captor.capture());
-        final AllowListFragment captured = captor.getValue();
-        assertEquals("test", captured.name);
-        assertTrue(captured.bundles.contains("org.apache.sling.test"));
-        assertEquals(1, captured.bundles.size());
+        configuration = Converters.standardConverter()
+                .convert(props)
+                .to(LegacyFragment.Configuration.class);
+    }
 
-        fragment.deactivate();
-        Mockito.verify(allowlist).unbindAllowListFragment(captured);
+    @Test
+    public void testFragmentBinding() {
+        final AllowListFragment fragment = new LegacyFragment(configuration);
+        assertEquals("test", fragment.name);
+        assertTrue(fragment.allows("org.apache.sling.test"));
+        assertFalse(fragment.allows("org.apache.sling.test.not.allowed"));
+        assertEquals(1, fragment.bundles.size());
+    }
+
+    @Test
+    public void testEquality() {
+        final LegacyFragment legacyFragment = new LegacyFragment(configuration);
+        final AllowListFragment fragment = new AllowListFragment(configuration.whitelist_name(), configuration.whitelist_bundles());
+
+        assertEquals(fragment, legacyFragment);
     }
 }

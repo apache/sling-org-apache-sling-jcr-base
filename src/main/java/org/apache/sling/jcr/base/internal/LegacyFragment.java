@@ -21,11 +21,6 @@ package org.apache.sling.jcr.base.internal;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
-import org.osgi.service.component.annotations.Deactivate;
-import org.osgi.service.component.annotations.Reference;
-import org.osgi.util.converter.Converters;
-
-import java.util.Map;
 
 /**
  * Legacy fragment configuration. Use {@link AllowListFragment} instead.
@@ -33,33 +28,24 @@ import java.util.Map;
 @Component(
         configurationPid = LegacyFragment.LEGACY_FACTORY_PID,
         configurationPolicy = ConfigurationPolicy.REQUIRE,
-        service = LegacyFragment.class
+        service = AllowListFragment.class
 )
-public class LegacyFragment {
+public class LegacyFragment extends AllowListFragment {
 
     public static final String LEGACY_FACTORY_PID = "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment";
 
-    private static final String LEGACY_NAME = "whitelist.name";
-    private static final String LEGACY_BUNDLES = "whitelist.bundles";
+    public @interface Configuration {
+        String whitelist_name();
 
-    private final AllowListFragment fragment;
-
-    private final LoginAdminAllowList allowList;
-
-    @Activate
-    public LegacyFragment(final @Reference LoginAdminAllowList allowList, final Map<String, Object> config) {
-        LoginAdminAllowList.LOG.warn("Using deprecated factory configuration '{}'. " +
-            "Update your configuration to use configuration '{}' instead.", 
-            LEGACY_FACTORY_PID, AllowListFragment.FACTORY_PID);
-        this.allowList = allowList;
-        final String name = Converters.standardConverter().convert(config.get(LEGACY_NAME)).to(String.class);
-        final String[] bundles = Converters.standardConverter().convert(config.get(LEGACY_BUNDLES)).to(String[].class);
-        this.fragment = new AllowListFragment(name, bundles);
-        this.allowList.bindAllowListFragment(fragment);
+        String[] whitelist_bundles() default {};
     }
 
-    @Deactivate
-    public void deactivate() {
-        this.allowList.unbindAllowListFragment(fragment);
+
+    @Activate
+    public LegacyFragment(Configuration configuration) {
+        super(configuration.whitelist_name(), configuration.whitelist_bundles());
+        LoginAdminAllowList.LOG.warn("Using deprecated factory configuration '{}' with whitelist.name='{}'. " +
+            "Update your configuration to use configuration '{}' instead.", 
+            LEGACY_FACTORY_PID, configuration.whitelist_name(), AllowListFragment.FACTORY_PID);
     }
 }

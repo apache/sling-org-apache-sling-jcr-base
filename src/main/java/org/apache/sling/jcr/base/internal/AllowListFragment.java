@@ -90,7 +90,7 @@ public class AllowListFragment {
 
     @Override
     public String toString() {
-        return name + ": " + bundles + "";
+        return name + ": " + bundles;
     }
 
     @Override
