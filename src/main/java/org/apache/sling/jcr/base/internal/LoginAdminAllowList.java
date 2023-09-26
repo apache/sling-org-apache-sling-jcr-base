@@ -64,12 +64,14 @@ public class LoginAdminAllowList {
 
     private static final String PROP_LEGACY_BUNDLES_ADDITIONAL = "whitelist.bundles.additional";
 
+    @SuppressWarnings("java:S3077")
+    // java:S3077 - the field is updated and read atomically, and the object is
+    // immutable, hence the use of "volatile" is adequate
     private volatile ConfigurationState config;
 
-    private final List<AllowListFragment> allowListFragments = new CopyOnWriteArrayList<AllowListFragment>();
+    private final List<AllowListFragment> allowListFragments = new CopyOnWriteArrayList<>();
 
-    private final Map<String, AllowListFragment> backwardsCompatibleFragments =
-            new ConcurrentHashMap<String, AllowListFragment>();
+    private final Map<String, AllowListFragment> backwardsCompatibleFragments = new ConcurrentHashMap<>();
 
     @Reference(
             cardinality = ReferenceCardinality.MULTIPLE,
@@ -94,11 +96,12 @@ public class LoginAdminAllowList {
     }
 
     public boolean allowLoginAdministrative(Bundle b) {
-        if (config == null) {
-            throw new IllegalStateException("LoginAdminAllowList has no configuration.");
-        }
         // create local copy of ConfigurationState to avoid reading mixed configurations during an configure
         final ConfigurationState localConfig = this.config;
+        if (localConfig == null) {
+            throw new IllegalStateException("LoginAdminAllowList has no configuration.");
+        }
+
         if(localConfig.bypassAllowList) {
             LOG.debug("Allow list is bypassed, all bundles allowed to use loginAdministrative");
             return true;

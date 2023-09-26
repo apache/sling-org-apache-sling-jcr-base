@@ -35,9 +35,11 @@ public class LegacyFragment extends AllowListFragment {
     public static final String LEGACY_FACTORY_PID = "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment";
 
     public @interface Configuration {
-        String whitelist_name();
+        @SuppressWarnings("java:S100")
+        String whitelist_name() default "[unnamed]";
 
-        String[] whitelist_bundles() default {};
+        @SuppressWarnings("java:S100")
+        String[] whitelist_bundles();
     }
 
 

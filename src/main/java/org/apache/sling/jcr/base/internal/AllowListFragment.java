@@ -50,7 +50,7 @@ import static java.util.Arrays.asList;
     )
     String[] allowlist_bundles();
 
-    @SuppressWarnings("unused")
+    @SuppressWarnings({"unused", "java:S100"})
     String webconsole_configurationFactory_nameHint() default "{allowlist.name}: [{allowlist.bundles}]";
 }
 
@@ -114,6 +114,6 @@ public class AllowListFragment {
     }
 
     private Set<String> asSet(final String[] values) {
-        return Collections.unmodifiableSet(new HashSet<String>(asList(values)));
+        return Collections.unmodifiableSet(new HashSet<>(asList(values)));
     }
 }
