@@ -18,7 +18,6 @@
  */
 package org.apache.sling.jcr.base.internal.mount;
 
-import java.util.HashSet;
 import java.util.Set;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Item;

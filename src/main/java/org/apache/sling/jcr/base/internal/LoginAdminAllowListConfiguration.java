@@ -22,24 +22,25 @@ import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
 @ObjectClassDefinition(
-    name = "Apache Sling Login Admin Whitelist",
+    pid = LoginAdminAllowList.PID,
+    name = "Apache Sling Login Admin Allowlist",
     description = "Defines which bundles can use SlingRepository.loginAdministrative()"
 )
-@interface LoginAdminWhitelistConfiguration {
+@interface LoginAdminAllowListConfiguration {
 
     /**
-     * Need to allow for bypassing the whitelist, for backwards
+     * Need to allow for bypassing the allowlist, for backwards
      * compatibility with previous Sling versions which didn't
      * implement it. Setting this to true is not recommended
      * and logged as a warning.
      */
     @AttributeDefinition(
-        name = "Bypass the whitelist",
+        name = "Bypass the allowlist",
         description = "Allow all bundles to use loginAdministrative(). Should ONLY be used " +
                       "for backwards compatibility reasons and if you are aware of " +
                       "the related security risks."
     )
-    boolean whitelist_bypass() default false;
+    boolean allowlist_bypass() default false;
 
     /**
      * Regular expression for bundle symbolic names for which loginAdministrative()
@@ -54,10 +55,10 @@ import org.osgi.service.metatype.annotations.ObjectClassDefinition;
      * @return The configured regular exression.
      */
     @AttributeDefinition(
-            name = "Whitelist regexp",
+            name = "Allowlist regexp",
             description = "Regular expression for bundle symbolic names for which loginAdministrative() " +
                     "is allowed. NOT recommended for production use, but useful for testing with " +
                     "generated bundles."
     )
-    String whitelist_bundles_regexp() default "";
+    String allowlist_bundles_regexp() default "";
 }

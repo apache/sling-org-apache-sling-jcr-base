@@ -19,6 +19,8 @@
 package org.apache.sling.jcr.base.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -33,19 +35,19 @@ import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.service.cm.ConfigurationException;
 
-public class LoginAdminWhitelistTest {
+public class LoginAdminAllowListTest {
 
-    private LoginAdminWhitelist whitelist;
+    private LoginAdminAllowList allowList;
 
     @Before
     public void setup() {
-        whitelist = new LoginAdminWhitelist();
+        allowList = new LoginAdminAllowList();
     }
     
     private void assertAdminLogin(final String bundleSymbolicName, boolean expected) {
         final Bundle b = Mockito.mock(Bundle.class);
         when(b.getSymbolicName()).thenReturn(bundleSymbolicName);
-        final boolean actual = whitelist.allowLoginAdministrative(b);
+        final boolean actual = allowList.allowLoginAdministrative(b);
         assertEquals("For bundle " + bundleSymbolicName + ", expected admin login=" + expected, expected, actual);
     }
     
@@ -58,8 +60,8 @@ public class LoginAdminWhitelistTest {
     }
 
     @Test
-    public void testBypassWhitelist() throws ConfigurationException {
-        configure(whitelist, true, null, null, null);
+    public void testBypassAllowList() throws ConfigurationException {
+        configure(allowList, true, null, null, null);
         
         for(String bsn : randomBsn()) {
             assertAdminLogin(bsn, true);
@@ -71,7 +73,7 @@ public class LoginAdminWhitelistTest {
         final String [] allowed = {
                 "bundle1", "bundle2"
         };
-        configure(whitelist, null, null, allowed, null);
+        configure(allowList, null, null, allowed, null);
 
         assertAdminLogin("foo.1.bar", false);
 
@@ -89,7 +91,7 @@ public class LoginAdminWhitelistTest {
         final String [] allowed = {
                 "bundle5", "bundle6"
         };
-        configure(whitelist, null, null, null, allowed);
+        configure(allowList, null, null, null, allowed);
 
         assertAdminLogin("foo.1.bar", false);
 
@@ -104,7 +106,7 @@ public class LoginAdminWhitelistTest {
     
     @Test
     public void testDefaultAndAdditionalConfig() throws ConfigurationException {
-        configure(whitelist, null, null, new String [] { "defB"}, new String [] { "addB"});
+        configure(allowList, null, null, new String [] { "defB"}, new String [] { "addB"});
         
         assertAdminLogin("defB", true);
         assertAdminLogin("addB", true);
@@ -116,11 +118,11 @@ public class LoginAdminWhitelistTest {
     }
     
     @Test
-    public void testRegexpWhitelist() throws ConfigurationException {
+    public void testRegexpAllowList() throws ConfigurationException {
         final String [] allowed = {
                 "bundle3", "bundle4"
         };
-        configure(whitelist, null, "foo.*bar", allowed, null);
+        configure(allowList, null, "foo.*bar", allowed, null);
 
         assertAdminLogin("foo.2.bar", true);
         assertAdminLogin("foo.somethingElse.bar", true);
@@ -136,16 +138,16 @@ public class LoginAdminWhitelistTest {
 
 
     @Test
-    public void testWhitelistFragment() throws ConfigurationException {
+    public void testAllowListFragment() throws ConfigurationException {
         final String [] allowed1 = randomBsn().toArray(new String[0]);
         final String [] allowed2 = randomBsn().toArray(new String[0]);
 
-        final WhitelistFragment testFragment1 = new WhitelistFragment("test1", allowed1);
-        final WhitelistFragment testFragment2 = new WhitelistFragment("test2", allowed2);
+        final AllowListFragment testFragment1 = new AllowListFragment("test1", allowed1);
+        final AllowListFragment testFragment2 = new AllowListFragment("test2", allowed2);
 
-        configure(whitelist, null, null, null, null);
-        whitelist.bindWhitelistFragment(testFragment1);
-        whitelist.bindWhitelistFragment(testFragment2);
+        configure(allowList, null, null, null, null);
+        allowList.bindAllowListFragment(testFragment1);
+        allowList.bindAllowListFragment(testFragment2);
 
         for(String bsn : allowed1) {
             assertAdminLogin(bsn, true);
@@ -159,7 +161,7 @@ public class LoginAdminWhitelistTest {
             assertAdminLogin(bsn, false);
         }
 
-        whitelist.unbindWhitelistFragment(testFragment1);
+        allowList.unbindAllowListFragment(testFragment1);
 
         for(String bsn : allowed1) {
             assertAdminLogin(bsn, false);
@@ -170,13 +172,13 @@ public class LoginAdminWhitelistTest {
         }
     }
 
-    private void configure(final LoginAdminWhitelist whitelist, final Boolean bypass, final String regexp, final String[] defaultBSNs, final String[] additionalBSNs) throws ConfigurationException {
+    private void configure(final LoginAdminAllowList allowList, final Boolean bypass, final String regexp, final String[] defaultBSNs, final String[] additionalBSNs) throws ConfigurationException {
         final Hashtable<String, Object> props = new Hashtable<>();
         if (bypass != null) {
-            props.put("whitelist.bypass", bypass);
+            props.put("allowlist.bypass", bypass);
         }
         if (regexp != null) {
-            props.put("whitelist.bundles.regexp", regexp);
+            props.put("allowlist.bundles.regexp", regexp);
         }
         if (defaultBSNs != null) {
             props.put("whitelist.bundles.default", defaultBSNs);
@@ -184,8 +186,34 @@ public class LoginAdminWhitelistTest {
         if (additionalBSNs != null) {
             props.put("whitelist.bundles.additional", additionalBSNs);
         }
-        LoginAdminWhitelistConfiguration configuration =
-                ConfigAnnotationUtil.fromDictionary(LoginAdminWhitelistConfiguration.class, props);
-        whitelist.configure(configuration, props);
+        LoginAdminAllowListConfiguration configuration =
+                ConfigAnnotationUtil.fromDictionary(LoginAdminAllowListConfiguration.class, props);
+        allowList.configure(configuration, props);
+    }
+
+    @Test
+    public void testLegacyConfigurationOnly() {
+        final LoginAdminAllowListConfiguration cfg = Mockito.mock(LoginAdminAllowListConfiguration.class);
+        when(cfg.allowlist_bypass()).thenReturn(false);
+        when(cfg.allowlist_bundles_regexp()).thenReturn("");
+        final Hashtable<String, Object> props = new Hashtable<>();
+        props.put("whitelist.bypass", true);
+        props.put("whitelist.bundles.regexp", "foo.*bar");
+        final LoginAdminAllowList.ConfigurationState state = new LoginAdminAllowList.ConfigurationState(cfg, props);
+        assertTrue(state.bypassAllowList);
+        assertEquals("foo.*bar", state.allowListRegexp.pattern());
+    }
+
+    @Test
+    public void testLegacyAndConfiguration() {
+        final LoginAdminAllowListConfiguration cfg = Mockito.mock(LoginAdminAllowListConfiguration.class);
+        when(cfg.allowlist_bypass()).thenReturn(true);
+        when(cfg.allowlist_bundles_regexp()).thenReturn("bar.foo*");
+        final Hashtable<String, Object> props = new Hashtable<>();
+        props.put("whitelist.bypass", false);
+        props.put("whitelist.bundles.regexp", "foo.*bar");
+        final LoginAdminAllowList.ConfigurationState state = new LoginAdminAllowList.ConfigurationState(cfg, props);
+        assertFalse(state.bypassAllowList);
+        assertEquals("bar.foo*", state.allowListRegexp.pattern());
     }
 }
