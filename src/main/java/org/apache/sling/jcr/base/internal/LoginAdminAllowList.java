@@ -145,7 +145,7 @@ public class LoginAdminAllowList {
             }
             String legacyRegexp = null;
             final Object legacyBundlesObject = properties.get(LEGACY_BUNDLES_PROPERTY);
-            if (legacyBypassObject != null) {
+            if (legacyBundlesObject != null) {
                 LOG.warn("Using deprecated configuration property '{}' from configuration '{}'. " +
                     "Update your configuration to use configuration '{}' and property '{}' instead.", 
                     LEGACY_BUNDLES_PROPERTY, LEGACY_PID, PID, "allowlist.bundles.regexp");

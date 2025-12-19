@@ -205,6 +205,18 @@ public class LoginAdminAllowListTest {
     }
 
     @Test
+    public void testLegacyBundlesOnly() {
+        final LoginAdminAllowListConfiguration cfg = Mockito.mock(LoginAdminAllowListConfiguration.class);
+        when(cfg.allowlist_bypass()).thenReturn(false);
+        when(cfg.allowlist_bundles_regexp()).thenReturn("");
+        final Hashtable<String, Object> props = new Hashtable<>();
+        props.put("whitelist.bundles.regexp", "foo.*bar");
+        final LoginAdminAllowList.ConfigurationState state = new LoginAdminAllowList.ConfigurationState(cfg, props);
+        assertFalse(state.bypassAllowList);
+        assertEquals("foo.*bar", state.allowListRegexp.pattern());
+    }
+
+    @Test
     public void testLegacyAndConfiguration() {
         final LoginAdminAllowListConfiguration cfg = Mockito.mock(LoginAdminAllowListConfiguration.class);
         when(cfg.allowlist_bypass()).thenReturn(true);
