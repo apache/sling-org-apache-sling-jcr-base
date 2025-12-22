@@ -224,8 +224,40 @@ public class LoginAdminAllowListTest {
         final Hashtable<String, Object> props = new Hashtable<>();
         props.put("whitelist.bypass", false);
         props.put("whitelist.bundles.regexp", "foo.*bar");
+        props.put("allowlist.bypass", true);
         final LoginAdminAllowList.ConfigurationState state = new LoginAdminAllowList.ConfigurationState(cfg, props);
-        assertFalse(state.bypassAllowList);
+        assertTrue(state.bypassAllowList);
         assertEquals("bar.foo*", state.allowListRegexp.pattern());
+    }
+
+    @Test
+    public void testBothLegacyAndNewBypassConfigured_NewTakesPrecedence() {
+        // Test that when both legacy and new bypass properties are explicitly configured,
+        // the new property takes precedence (consistent with regexp behavior)
+        final LoginAdminAllowListConfiguration cfg = Mockito.mock(LoginAdminAllowListConfiguration.class);
+        when(cfg.allowlist_bypass()).thenReturn(true);
+        when(cfg.allowlist_bundles_regexp()).thenReturn("");
+        final Hashtable<String, Object> props = new Hashtable<>();
+        // Both legacy and new bypass are configured - new should win
+        props.put("allowlist.bypass", true);
+        props.put("whitelist.bypass", false);
+        final LoginAdminAllowList.ConfigurationState state = new LoginAdminAllowList.ConfigurationState(cfg, props);
+        // New config (true) should take precedence over legacy (false)
+        assertTrue(state.bypassAllowList);
+    }
+
+    @Test
+    public void testBothLegacyAndNewRegexpConfigured_NewTakesPrecedence() {
+        // Test that when both legacy and new regexp properties are configured,
+        // the new property takes precedence
+        final LoginAdminAllowListConfiguration cfg = Mockito.mock(LoginAdminAllowListConfiguration.class);
+        when(cfg.allowlist_bypass()).thenReturn(false);
+        when(cfg.allowlist_bundles_regexp()).thenReturn("new.*pattern");
+        final Hashtable<String, Object> props = new Hashtable<>();
+        props.put("allowlist.bundles.regexp", "new.*pattern");
+        props.put("whitelist.bundles.regexp", "legacy.*pattern");
+        final LoginAdminAllowList.ConfigurationState state = new LoginAdminAllowList.ConfigurationState(cfg, props);
+        // New config should take precedence over legacy
+        assertEquals("new.*pattern", state.allowListRegexp.pattern());
     }
 }
