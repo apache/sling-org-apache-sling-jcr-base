@@ -134,14 +134,28 @@ public class LoginAdminAllowList {
         public final Pattern allowListRegexp;
 
         ConfigurationState(final LoginAdminAllowListConfiguration config, final Map<String, Object> properties) {
-            // first check for legacy properties
-            boolean bypass = config.allowlist_bypass();
+            // first check for legacy bypass property
+            Boolean legacyBypass = null;
             final Object legacyBypassObject = properties.get(LEGACY_BYPASS_PROPERTY);
             if (legacyBypassObject != null) {
                 LOG.warn("Using deprecated configuration property '{}' from configuration '{}'. " +
                     "Update your configuration to use configuration '{}' and property '{}' instead.", 
                     LEGACY_BYPASS_PROPERTY, LEGACY_PID, PID, "allowlist.bypass");
-                bypass = Converters.standardConverter().convert(legacyBypassObject).defaultValue(false).to(Boolean.class);
+                legacyBypass = Converters.standardConverter().convert(legacyBypassObject).defaultValue(false).to(Boolean.class);
+            }
+
+            // new config takes precedence over legacy
+            boolean bypass;
+            final Object newBypassObject = properties.get("allowlist.bypass");
+            if (newBypassObject != null) {
+                if (legacyBypass != null) {
+                    LOG.warn("Both deprecated configuration property '{}' and non-deprecated configuration property '{}' are set. " +
+                        "The deprecated property '{}' is ignored.", 
+                        LEGACY_BYPASS_PROPERTY, "allowlist.bypass", LEGACY_BYPASS_PROPERTY);
+                }
+                bypass = config.allowlist_bypass();
+            } else {
+                bypass = legacyBypass != null ? legacyBypass : false;
             }
             String legacyRegexp = null;
             final Object legacyBundlesObject = properties.get(LEGACY_BUNDLES_PROPERTY);
