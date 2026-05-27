@@ -18,7 +18,6 @@
  */
 package org.apache.sling.jcr.base.internal.mount;
 
-import java.util.Set;
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Item;
 import javax.jcr.Node;
@@ -28,19 +27,23 @@ import javax.jcr.Session;
 import javax.jcr.UnsupportedRepositoryOperationException;
 import javax.jcr.Workspace;
 
+import java.util.Set;
+
 import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.api.JackrabbitWorkspace;
 import org.apache.jackrabbit.api.security.principal.PrincipalManager;
 import org.apache.jackrabbit.api.security.user.UserManager;
 
 public class ProxyJackrabbitSession extends ProxySession<JackrabbitSession> implements JackrabbitSession {
-    public ProxyJackrabbitSession(ProxyRepository repository, JackrabbitSession jcr, Session mount, Set<String> mountPoints) {
+    public ProxyJackrabbitSession(
+            ProxyRepository repository, JackrabbitSession jcr, Session mount, Set<String> mountPoints) {
         super(repository, jcr, mount, mountPoints);
     }
 
     @Override
     public Workspace getWorkspace() {
-        return new ProxyJackrabbitWorkspace(this, (JackrabbitWorkspace) this.jcr.getWorkspace(), (JackrabbitWorkspace) this.mount.getWorkspace());
+        return new ProxyJackrabbitWorkspace(
+                this, (JackrabbitWorkspace) this.jcr.getWorkspace(), (JackrabbitWorkspace) this.mount.getWorkspace());
     }
 
     public boolean hasPermission(String absPath, String... actions) throws RepositoryException {
@@ -50,11 +53,13 @@ public class ProxyJackrabbitSession extends ProxySession<JackrabbitSession> impl
         return jcr.hasPermission(absPath, actions);
     }
 
-    public PrincipalManager getPrincipalManager() throws AccessDeniedException, UnsupportedRepositoryOperationException, RepositoryException {
+    public PrincipalManager getPrincipalManager()
+            throws AccessDeniedException, UnsupportedRepositoryOperationException, RepositoryException {
         return jcr.getPrincipalManager();
     }
 
-    public UserManager getUserManager() throws AccessDeniedException, UnsupportedRepositoryOperationException, RepositoryException {
+    public UserManager getUserManager()
+            throws AccessDeniedException, UnsupportedRepositoryOperationException, RepositoryException {
         return new ProxyUserManager(this, jcr.getUserManager(), ((JackrabbitSession) mount).getUserManager());
     }
 

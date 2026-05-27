@@ -18,28 +18,25 @@
  */
 package org.apache.sling.jcr.base.internal;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
 import org.osgi.util.converter.Converters;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class LegacyFragmentTest {
 
     private final LegacyFragment.Configuration configuration;
+
     {
         final Map<String, Object> props = new HashMap<>();
         props.put("whitelist.name", "test");
-        props.put("whitelist.bundles", new String[] { "org.apache.sling.test" });
-        configuration = Converters.standardConverter()
-                .convert(props)
-                .to(LegacyFragment.Configuration.class);
+        props.put("whitelist.bundles", new String[] {"org.apache.sling.test"});
+        configuration = Converters.standardConverter().convert(props).to(LegacyFragment.Configuration.class);
     }
 
     @Test
@@ -54,7 +51,8 @@ public class LegacyFragmentTest {
     @Test
     public void testEquality() {
         final LegacyFragment legacyFragment = new LegacyFragment(configuration);
-        final AllowListFragment fragment = new AllowListFragment(configuration.whitelist_name(), configuration.whitelist_bundles());
+        final AllowListFragment fragment =
+                new AllowListFragment(configuration.whitelist_name(), configuration.whitelist_bundles());
 
         assertEquals(fragment, legacyFragment);
     }

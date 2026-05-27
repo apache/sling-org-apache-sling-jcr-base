@@ -18,14 +18,15 @@
  */
 package org.apache.sling.jcr.base.util;
 
+import javax.jcr.Repository;
+
+import java.util.Hashtable;
+
 import org.apache.jackrabbit.rmi.client.ClientRepositoryFactory;
 import org.apache.jackrabbit.rmi.client.LocalAdapterFactory;
 
-import javax.jcr.Repository;
-import java.util.Hashtable;
-
-/** 
- * Access a Repository via JNDI or RMI. 
+/**
+ * Access a Repository via JNDI or RMI.
  *
  * @deprecated No longer supported
  */
@@ -41,37 +42,33 @@ public class RepositoryAccessor {
     public static final String JNDI_PREFIX = "jndi://";
 
     /**
-     * Name of the property that the jcr client and server bundles to override
-     * their default configuration settings and connect to the specified
-     * repository instead (SLING-254 and SLING-260)
+     * Name of the property that the jcr client and server bundles to override their default
+     * configuration settings and connect to the specified repository instead (SLING-254 and
+     * SLING-260)
      */
     public static final String REPOSITORY_URL_OVERRIDE_PROPERTY = "sling.repository.url";
 
     /**
-     * First try to access the Repository via JNDI (unless jndiContext is null),
-     * and if not successful try RMI.
+     * First try to access the Repository via JNDI (unless jndiContext is null), and if not successful
+     * try RMI.
      *
-     * @param repositoryName JNDI name or RMI URL (must start with "rmi://") of
-     *            the Repository
+     * @param repositoryName JNDI name or RMI URL (must start with "rmi://") of the Repository
      * @param jndiContext if null, JNDI is not tried
      * @return a Repository, or null if not found
      * @throws UnsupportedOperationException Always throws {@code UnsupportedOperationException}
      * @deprecated No longer supported
      */
     @Deprecated
-    public Repository getRepository(String repositoryName,
-            Hashtable<String, Object> jndiContext) {
+    public Repository getRepository(String repositoryName, Hashtable<String, Object> jndiContext) {
         throw new UnsupportedOperationException("Repository access via JNDI-context is no longer supported.");
     }
 
     /**
      * Acquire a Repository from the given URL
      *
-     * @param url for RMI, an RMI URL. For JNDI, "jndi://", followed by the JNDI
-     *            repository name, followed by a colon and a comma-separated
-     *            list of JNDI context values, for example:
-     *
-     * <pre>
+     * @param url for RMI, an RMI URL. For JNDI, "jndi://", followed by the JNDI repository name,
+     *     followed by a colon and a comma-separated list of JNDI context values, for example:
+     *     <pre>
      *      jndi://jackrabbit:java.naming.factory.initial=org.SomeClass,java.naming.provider.url=http://foo.com
      * </pre>
      *
@@ -85,16 +82,15 @@ public class RepositoryAccessor {
     }
 
     /**
-     * Returns the <code>LocalAdapterFactory</code> used to convert Jackrabbit
-     * JCR RMI remote objects to local JCR API objects.
-     * <p>
-     * This method returns an instance of the
-     * <code>JackrabbitClientAdapterFactory</code> which allows accessing
-     * Jackrabbit (or Jackrabbit-based) repositories over RMI. Extensions of
-     * this class may overwrite this method to use a different implementation.
-     * 
-     * @return the <code>LocalAdapterFactory</code> used to convert Jackrabbit
-     * JCR RMI remote objects to local JCR API objects.
+     * Returns the <code>LocalAdapterFactory</code> used to convert Jackrabbit JCR RMI remote objects
+     * to local JCR API objects.
+     *
+     * <p>This method returns an instance of the <code>JackrabbitClientAdapterFactory</code> which
+     * allows accessing Jackrabbit (or Jackrabbit-based) repositories over RMI. Extensions of this
+     * class may overwrite this method to use a different implementation.
+     *
+     * @return the <code>LocalAdapterFactory</code> used to convert Jackrabbit JCR RMI remote objects
+     *     to local JCR API objects.
      * @throws UnsupportedOperationException Always throws {@code UnsupportedOperationException}
      * @deprecated No longer supported
      */
@@ -104,20 +100,16 @@ public class RepositoryAccessor {
     }
 
     /**
-     * Returns the <code>ClientRepositoryFactory</code> to access the remote
-     * JCR repository over RMI.
-     * <p>
-     * This method creates an instance of the
-     * <code>ClientRepositoryFactory</code> class initialized with the
-     * <code>LocalAdapterFactory</code> returned from the
-     * {@link #getLocalAdapterFactory()} method. Extensions may overwrite this
-     * method to return an extension of the Jackrabbit JCR RMI
-     * <code>ClientRepositoryFactory</code> class.
-     * 
-     * @return the <code>ClientRepositoryFactory</code> to access the remote
-     * JCR repository over RMI.
+     * Returns the <code>ClientRepositoryFactory</code> to access the remote JCR repository over RMI.
+     *
+     * <p>This method creates an instance of the <code>ClientRepositoryFactory</code> class
+     * initialized with the <code>LocalAdapterFactory</code> returned from the {@link
+     * #getLocalAdapterFactory()} method. Extensions may overwrite this method to return an extension
+     * of the Jackrabbit JCR RMI <code>ClientRepositoryFactory</code> class.
+     *
+     * @return the <code>ClientRepositoryFactory</code> to access the remote JCR repository over RMI.
      * @throws UnsupportedOperationException Always throws {@code UnsupportedOperationException}
-     * @deprecated No longer supported 
+     * @deprecated No longer supported
      */
     @Deprecated
     protected ClientRepositoryFactory getClientRepositoryFactory() {

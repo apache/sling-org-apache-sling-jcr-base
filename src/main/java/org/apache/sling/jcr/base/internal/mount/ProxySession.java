@@ -18,17 +18,6 @@
  */
 package org.apache.sling.jcr.base.internal.mount;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.AccessControlException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Credentials;
 import javax.jcr.InvalidItemStateException;
@@ -62,6 +51,17 @@ import javax.jcr.retention.RetentionManager;
 import javax.jcr.security.AccessControlManager;
 import javax.jcr.version.VersionException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.AccessControlException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.jackrabbit.api.security.JackrabbitAccessControlManager;
 import org.apache.jackrabbit.commons.iterator.NodeIteratorAdapter;
 import org.apache.jackrabbit.oak.commons.PathUtils;
@@ -82,7 +82,9 @@ public class ProxySession<T extends Session> implements Session {
     }
 
     boolean isMount(String path) {
-        return path != null && (mountPoints.contains(path) || mountPoints.stream().anyMatch(mountPoint -> path.startsWith(mountPoint + "/")));
+        return path != null
+                && (mountPoints.contains(path)
+                        || mountPoints.stream().anyMatch(mountPoint -> path.startsWith(mountPoint + "/")));
     }
 
     boolean isMountParent(String path) {
@@ -90,19 +92,26 @@ public class ProxySession<T extends Session> implements Session {
     }
 
     boolean isMountDirectParent(String path) {
-        return mountPoints.stream().anyMatch(mountPoint -> PathUtils.getParentPath(mountPoint).equals(path));
+        return mountPoints.stream()
+                .anyMatch(mountPoint -> PathUtils.getParentPath(mountPoint).equals(path));
     }
 
     public <F> F wrap(F source) {
         if (source instanceof ProxyWrapper) {
             return source;
         }
-        return (F) (source instanceof Node ? new ProxyNode(this, (Node) source) :
-                source instanceof Property ? new ProxyProperty(this, (Property) source) :
-                        source instanceof Item ? new ProxyItem<>(this, (Item) source) :
-                                source instanceof Lock ? new ProxyLock(this, (Lock) source) :
-                                        source instanceof QueryResult ? new ProxyQueryResult(this, (QueryResult) source) :
-                                                source);
+        return (F)
+                (source instanceof Node
+                        ? new ProxyNode(this, (Node) source)
+                        : source instanceof Property
+                                ? new ProxyProperty(this, (Property) source)
+                                : source instanceof Item
+                                        ? new ProxyItem<>(this, (Item) source)
+                                        : source instanceof Lock
+                                                ? new ProxyLock(this, (Lock) source)
+                                                : source instanceof QueryResult
+                                                        ? new ProxyQueryResult(this, (QueryResult) source)
+                                                        : source);
     }
 
     public <F> F unwrap(F source) {
@@ -359,7 +368,9 @@ public class ProxySession<T extends Session> implements Session {
     }
 
     @Override
-    public void removeItem(String absPath) throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException {
+    public void removeItem(String absPath)
+            throws VersionException, LockException, ConstraintViolationException, AccessDeniedException,
+                    RepositoryException {
         if (sync != null) {
             sync.remove(absPath);
         }
@@ -381,17 +392,23 @@ public class ProxySession<T extends Session> implements Session {
 
     private volatile Set<String> sync;
 
-    private final static List<String> ignore = Arrays.asList("jcr:primaryType", "jcr:created", "jcr:createdBy");
+    private static final List<String> ignore = Arrays.asList("jcr:primaryType", "jcr:created", "jcr:createdBy");
 
     @Override
-    public void save() throws AccessDeniedException, ItemExistsException, ReferentialIntegrityException, ConstraintViolationException, InvalidItemStateException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException {
+    public void save()
+            throws AccessDeniedException, ItemExistsException, ReferentialIntegrityException,
+                    ConstraintViolationException, InvalidItemStateException, VersionException, LockException,
+                    NoSuchNodeTypeException, RepositoryException {
         if (sync != null) {
             for (String path : sync) {
                 if (this.jcr.nodeExists(path)) {
                     Node jcrNode = jcr.getNode(path);
-                    Node mountNode = mount.nodeExists(path) ?
-                            mount.getNode(path) :
-                            mount.getNode(PathUtils.getParentPath(path)).addNode(PathUtils.getName(path), jcrNode.getPrimaryNodeType().getName());
+                    Node mountNode = mount.nodeExists(path)
+                            ? mount.getNode(path)
+                            : mount.getNode(PathUtils.getParentPath(path))
+                                    .addNode(
+                                            PathUtils.getName(path),
+                                            jcrNode.getPrimaryNodeType().getName());
                     for (PropertyIterator iter = jcrNode.getProperties(); iter.hasNext(); ) {
                         Property property = iter.nextProperty();
                         try {
@@ -456,7 +473,9 @@ public class ProxySession<T extends Session> implements Session {
     }
 
     @Override
-    public ContentHandler getImportContentHandler(String parentAbsPath, int uuidBehavior) throws PathNotFoundException, ConstraintViolationException, VersionException, LockException, RepositoryException {
+    public ContentHandler getImportContentHandler(String parentAbsPath, int uuidBehavior)
+            throws PathNotFoundException, ConstraintViolationException, VersionException, LockException,
+                    RepositoryException {
         if (isMount(parentAbsPath)) {
             return this.mount.getImportContentHandler(parentAbsPath, uuidBehavior);
         } else {
@@ -465,7 +484,9 @@ public class ProxySession<T extends Session> implements Session {
     }
 
     @Override
-    public void importXML(String parentAbsPath, InputStream in, int uuidBehavior) throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException, VersionException, InvalidSerializedDataException, LockException, RepositoryException {
+    public void importXML(String parentAbsPath, InputStream in, int uuidBehavior)
+            throws IOException, PathNotFoundException, ItemExistsException, ConstraintViolationException,
+                    VersionException, InvalidSerializedDataException, LockException, RepositoryException {
         if (isMount(parentAbsPath)) {
             this.mount.importXML(parentAbsPath, in, uuidBehavior);
         } else {
@@ -474,7 +495,8 @@ public class ProxySession<T extends Session> implements Session {
     }
 
     @Override
-    public void exportSystemView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, SAXException, RepositoryException {
+    public void exportSystemView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse)
+            throws PathNotFoundException, SAXException, RepositoryException {
         if (isMount(absPath)) {
             this.mount.exportSystemView(absPath, contentHandler, skipBinary, noRecurse);
         } else {
@@ -483,7 +505,8 @@ public class ProxySession<T extends Session> implements Session {
     }
 
     @Override
-    public void exportSystemView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse) throws IOException, PathNotFoundException, RepositoryException {
+    public void exportSystemView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse)
+            throws IOException, PathNotFoundException, RepositoryException {
         if (isMount(absPath)) {
             this.mount.exportSystemView(absPath, out, skipBinary, noRecurse);
         } else {
@@ -492,7 +515,8 @@ public class ProxySession<T extends Session> implements Session {
     }
 
     @Override
-    public void exportDocumentView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse) throws PathNotFoundException, SAXException, RepositoryException {
+    public void exportDocumentView(String absPath, ContentHandler contentHandler, boolean skipBinary, boolean noRecurse)
+            throws PathNotFoundException, SAXException, RepositoryException {
         if (isMount(absPath)) {
             this.mount.exportDocumentView(absPath, contentHandler, skipBinary, noRecurse);
         } else {
@@ -501,7 +525,8 @@ public class ProxySession<T extends Session> implements Session {
     }
 
     @Override
-    public void exportDocumentView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse) throws IOException, PathNotFoundException, RepositoryException {
+    public void exportDocumentView(String absPath, OutputStream out, boolean skipBinary, boolean noRecurse)
+            throws IOException, PathNotFoundException, RepositoryException {
         if (isMount(absPath)) {
             this.mount.exportDocumentView(absPath, out, skipBinary, noRecurse);
         } else {
@@ -557,11 +582,14 @@ public class ProxySession<T extends Session> implements Session {
     }
 
     @Override
-    public AccessControlManager getAccessControlManager() throws UnsupportedRepositoryOperationException, RepositoryException {
+    public AccessControlManager getAccessControlManager()
+            throws UnsupportedRepositoryOperationException, RepositoryException {
         AccessControlManager manager = this.jcr.getAccessControlManager();
-        return manager instanceof JackrabbitAccessControlManager ?
-                new ProxyJackrabbitAccessControlManager(this, (JackrabbitAccessControlManager) manager, (JackrabbitAccessControlManager) this.mount.getAccessControlManager()) :
-                new ProxyAccessControlManager<>(this, manager, this.mount.getAccessControlManager());
+        return manager instanceof JackrabbitAccessControlManager
+                ? new ProxyJackrabbitAccessControlManager(
+                        this, (JackrabbitAccessControlManager) manager, (JackrabbitAccessControlManager)
+                                this.mount.getAccessControlManager())
+                : new ProxyAccessControlManager<>(this, manager, this.mount.getAccessControlManager());
     }
 
     @Override
@@ -570,7 +598,9 @@ public class ProxySession<T extends Session> implements Session {
     }
 
     @Override
-    public void move(String srcAbsPath, String destAbsPath) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException {
+    public void move(String srcAbsPath, String destAbsPath)
+            throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException,
+                    LockException, RepositoryException {
         if (isMount(srcAbsPath) && isMount(destAbsPath)) {
             this.mount.move(srcAbsPath, destAbsPath);
         } else if (!isMount(srcAbsPath) && !isMount(destAbsPath)) {

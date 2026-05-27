@@ -18,7 +18,8 @@
  */
 package org.apache.sling.jcr.base;
 
-import static org.junit.Assert.fail;
+import javax.jcr.Repository;
+import javax.jcr.RepositoryException;
 
 import java.util.Arrays;
 import java.util.Dictionary;
@@ -26,12 +27,11 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
 
-import javax.jcr.Repository;
-import javax.jcr.RepositoryException;
-
 import org.apache.sling.serviceusermapping.ServiceUserMapper;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+
+import static org.junit.Assert.fail;
 
 /** Minimal AbstractSlingRepositoryManager used for testing */
 public class MockSlingRepositoryManager extends AbstractSlingRepositoryManager {
@@ -50,7 +50,8 @@ public class MockSlingRepositoryManager extends AbstractSlingRepositoryManager {
         this(repository, false, ALLOWLIST_ALL);
     }
 
-    public MockSlingRepositoryManager(Repository repository, boolean loginAdminDisabled, String... loginAdminAllowList) {
+    public MockSlingRepositoryManager(
+            Repository repository, boolean loginAdminDisabled, String... loginAdminAllowList) {
         this.repository = repository;
         this.loginAdminDisabled = loginAdminDisabled;
         this.loginAdminAllowList = new HashSet<>(Arrays.asList(loginAdminAllowList));
@@ -74,10 +75,10 @@ public class MockSlingRepositoryManager extends AbstractSlingRepositoryManager {
 
     @Override
     protected AbstractSlingRepository2 create(Bundle usingBundle) {
-        if(repository != null) {
+        if (repository != null) {
             try {
                 return new MockSlingRepository2(this, usingBundle, repository.login());
-            } catch(RepositoryException rex) {
+            } catch (RepositoryException rex) {
                 fail(rex.toString());
             }
         }
@@ -85,12 +86,10 @@ public class MockSlingRepositoryManager extends AbstractSlingRepositoryManager {
     }
 
     @Override
-    protected void destroy(AbstractSlingRepository2 repositoryServiceInstance) {
-    }
+    protected void destroy(AbstractSlingRepository2 repositoryServiceInstance) {}
 
     @Override
-    protected void disposeRepository(Repository repository) {
-    }
+    protected void disposeRepository(Repository repository) {}
 
     @Override
     protected boolean allowLoginAdministrativeForBundle(final Bundle bundle) {

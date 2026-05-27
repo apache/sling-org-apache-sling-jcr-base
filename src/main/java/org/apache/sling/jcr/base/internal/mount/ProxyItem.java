@@ -119,7 +119,10 @@ public class ProxyItem<T extends Item> extends ProxyWrapper<T> implements Item {
     }
 
     @Override
-    public void save() throws AccessDeniedException, ItemExistsException, ConstraintViolationException, InvalidItemStateException, ReferentialIntegrityException, VersionException, LockException, NoSuchNodeTypeException, RepositoryException {
+    public void save()
+            throws AccessDeniedException, ItemExistsException, ConstraintViolationException, InvalidItemStateException,
+                    ReferentialIntegrityException, VersionException, LockException, NoSuchNodeTypeException,
+                    RepositoryException {
         this.mountSession.save();
     }
 
@@ -129,7 +132,9 @@ public class ProxyItem<T extends Item> extends ProxyWrapper<T> implements Item {
     }
 
     @Override
-    public void remove() throws VersionException, LockException, ConstraintViolationException, AccessDeniedException, RepositoryException {
+    public void remove()
+            throws VersionException, LockException, ConstraintViolationException, AccessDeniedException,
+                    RepositoryException {
         this.mountSession.removeItem(this.getPath());
     }
 }

@@ -18,15 +18,15 @@
  */
 package org.apache.sling.jcr.base.internal.mount;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
 import javax.jcr.NoSuchWorkspaceException;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.jackrabbit.api.JackrabbitSession;
@@ -37,7 +37,8 @@ public class ProxyJackrabbitRepository extends ProxyRepository<JackrabbitReposit
     }
 
     @Override
-    public Session login(Credentials credentials, String workspaceName, Map<String, Object> attributes) throws LoginException, NoSuchWorkspaceException, RepositoryException {
+    public Session login(Credentials credentials, String workspaceName, Map<String, Object> attributes)
+            throws LoginException, NoSuchWorkspaceException, RepositoryException {
         Session jcrSession = jcr.login(credentials, workspaceName, attributes);
 
         if (attributes == null) {
@@ -47,13 +48,11 @@ public class ProxyJackrabbitRepository extends ProxyRepository<JackrabbitReposit
 
         Session mountSession = mount.login(credentials, workspaceName, attributes);
 
-        return jcrSession instanceof JackrabbitSession ?
-                new ProxyJackrabbitSession(this, (JackrabbitSession) jcrSession, mountSession, this.mountPoints) :
-                new ProxySession<>(this, jcrSession, mountSession, this.mountPoints);
+        return jcrSession instanceof JackrabbitSession
+                ? new ProxyJackrabbitSession(this, (JackrabbitSession) jcrSession, mountSession, this.mountPoints)
+                : new ProxySession<>(this, jcrSession, mountSession, this.mountPoints);
     }
 
     @Override
-    public void shutdown() {
-
-    }
+    public void shutdown() {}
 }

@@ -18,10 +18,8 @@
  */
 
 /**
- * The {@code org.apache.sling.jcr.base.spi} package provides a 
- * way to bifurcate requests to subpaths to a mount provider.
+ * The {@code org.apache.sling.jcr.base.spi} package provides a way to bifurcate requests to
+ * subpaths to a mount provider.
  */
 @org.osgi.annotation.versioning.Version("0.1.0")
 package org.apache.sling.jcr.base.spi;
-
-

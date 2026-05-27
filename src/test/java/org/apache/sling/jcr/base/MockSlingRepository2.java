@@ -23,13 +23,13 @@ import javax.jcr.Session;
 
 import org.osgi.framework.Bundle;
 
-/** Minimal AbstractSlingRepositoryManager used for testing */ 
+/** Minimal AbstractSlingRepositoryManager used for testing */
 class MockSlingRepository2 extends AbstractSlingRepository2 {
 
     MockSlingRepository2(MockSlingRepositoryManager manager, Bundle usingBundle, Session session) {
         super(manager, usingBundle);
     }
-    
+
     @Override
     protected Session createAdministrativeSession(String workspace) throws RepositoryException {
         // Assuming we run on a test repo with no access control
@@ -37,7 +37,8 @@ class MockSlingRepository2 extends AbstractSlingRepository2 {
     }
 
     @Override
-    protected Session createServiceSession(Iterable<String> principalNames, String workspace) throws RepositoryException {
+    protected Session createServiceSession(Iterable<String> principalNames, String workspace)
+            throws RepositoryException {
         return getRepository().login();
     }
 }

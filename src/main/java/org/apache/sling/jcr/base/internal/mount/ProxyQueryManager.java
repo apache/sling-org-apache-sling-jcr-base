@@ -35,7 +35,10 @@ public class ProxyQueryManager extends ProxyWrapper<QueryManager> implements Que
 
     @Override
     public Query createQuery(String statement, String language) throws InvalidQueryException, RepositoryException {
-        return new ProxyQuery(this.mountSession, delegate.createQuery(statement, language), delegate2.createQuery(statement, language));
+        return new ProxyQuery(
+                this.mountSession,
+                delegate.createQuery(statement, language),
+                delegate2.createQuery(statement, language));
     }
 
     @Override

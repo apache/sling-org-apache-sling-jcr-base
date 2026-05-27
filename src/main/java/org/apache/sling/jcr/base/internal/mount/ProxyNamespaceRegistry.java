@@ -34,13 +34,17 @@ public class ProxyNamespaceRegistry implements NamespaceRegistry {
     }
 
     @Override
-    public void registerNamespace(String prefix, String uri) throws NamespaceException, UnsupportedRepositoryOperationException, AccessDeniedException, RepositoryException {
+    public void registerNamespace(String prefix, String uri)
+            throws NamespaceException, UnsupportedRepositoryOperationException, AccessDeniedException,
+                    RepositoryException {
         jcr.registerNamespace(prefix, uri);
         mount.registerNamespace(prefix, uri);
     }
 
     @Override
-    public void unregisterNamespace(String prefix) throws NamespaceException, UnsupportedRepositoryOperationException, AccessDeniedException, RepositoryException {
+    public void unregisterNamespace(String prefix)
+            throws NamespaceException, UnsupportedRepositoryOperationException, AccessDeniedException,
+                    RepositoryException {
         jcr.unregisterNamespace(prefix);
         mount.unregisterNamespace(prefix);
     }

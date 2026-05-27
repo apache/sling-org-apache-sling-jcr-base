@@ -18,10 +18,6 @@
  */
 package org.apache.sling.jcr.base.internal.mount;
 
-import java.io.InputStream;
-import java.math.BigDecimal;
-import java.util.Calendar;
-
 import javax.jcr.AccessDeniedException;
 import javax.jcr.Binary;
 import javax.jcr.InvalidItemStateException;
@@ -51,103 +47,145 @@ import javax.jcr.version.Version;
 import javax.jcr.version.VersionException;
 import javax.jcr.version.VersionHistory;
 
+import java.io.InputStream;
+import java.math.BigDecimal;
+import java.util.Calendar;
+
 public class ProxyNode extends ProxyItem<Node> implements Node {
     public ProxyNode(ProxySession mountSession, Node node) {
         super(mountSession, node);
     }
 
     @Override
-    public Node addNode(String relPath) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, RepositoryException {
+    public Node addNode(String relPath)
+            throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException,
+                    LockException, RepositoryException {
         return mountSession.addNode(getPath(), concat(getPath(), relPath), relPath);
     }
 
     @Override
-    public Node addNode(String relPath, String primaryNodeTypeName) throws ItemExistsException, PathNotFoundException, NoSuchNodeTypeException, LockException, VersionException, ConstraintViolationException, RepositoryException {
+    public Node addNode(String relPath, String primaryNodeTypeName)
+            throws ItemExistsException, PathNotFoundException, NoSuchNodeTypeException, LockException, VersionException,
+                    ConstraintViolationException, RepositoryException {
         return mountSession.addNode(getPath(), concat(getPath(), relPath), relPath, primaryNodeTypeName);
     }
 
     @Override
-    public void orderBefore(String srcChildRelPath, String destChildRelPath) throws UnsupportedRepositoryOperationException, VersionException, ConstraintViolationException, ItemNotFoundException, LockException, RepositoryException {
+    public void orderBefore(String srcChildRelPath, String destChildRelPath)
+            throws UnsupportedRepositoryOperationException, VersionException, ConstraintViolationException,
+                    ItemNotFoundException, LockException, RepositoryException {
         this.delegate.orderBefore(srcChildRelPath, destChildRelPath);
     }
 
     @Override
-    public Property setProperty(String name, Value value) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, Value value)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, value));
     }
 
     @Override
-    public Property setProperty(String name, Value value, int type) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, Value value, int type)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, value, type));
     }
 
     @Override
-    public Property setProperty(String name, Value[] values) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, Value[] values)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, values));
     }
 
     @Override
-    public Property setProperty(String name, Value[] values, int type) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, Value[] values, int type)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, values, type));
     }
 
     @Override
-    public Property setProperty(String name, String[] values) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, String[] values)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, values));
     }
 
     @Override
-    public Property setProperty(String name, String[] values, int type) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, String[] values, int type)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, values, type));
     }
 
     @Override
-    public Property setProperty(String name, String value) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, String value)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, value));
     }
 
     @Override
-    public Property setProperty(String name, String value, int type) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, String value, int type)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, value, type));
     }
 
     @Override
-    public Property setProperty(String name, InputStream value) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, InputStream value)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, value));
     }
 
     @Override
-    public Property setProperty(String name, Binary value) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, Binary value)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, value));
     }
 
     @Override
-    public Property setProperty(String name, boolean value) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, boolean value)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, value));
     }
 
     @Override
-    public Property setProperty(String name, double value) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, double value)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, value));
     }
 
     @Override
-    public Property setProperty(String name, BigDecimal value) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, BigDecimal value)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, value));
     }
 
     @Override
-    public Property setProperty(String name, long value) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, long value)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, value));
     }
 
     @Override
-    public Property setProperty(String name, Calendar value) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, Calendar value)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, value));
     }
 
     @Override
-    public Property setProperty(String name, Node value) throws ValueFormatException, VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public Property setProperty(String name, Node value)
+            throws ValueFormatException, VersionException, LockException, ConstraintViolationException,
+                    RepositoryException {
         return this.mountSession.wrap(this.delegate.setProperty(name, value));
     }
 
@@ -267,17 +305,23 @@ public class ProxyNode extends ProxyItem<Node> implements Node {
     }
 
     @Override
-    public void setPrimaryType(String nodeTypeName) throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException, RepositoryException {
+    public void setPrimaryType(String nodeTypeName)
+            throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException,
+                    RepositoryException {
         this.delegate.setPrimaryType(nodeTypeName);
     }
 
     @Override
-    public void addMixin(String mixinName) throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException, RepositoryException {
+    public void addMixin(String mixinName)
+            throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException,
+                    RepositoryException {
         this.delegate.addMixin(mixinName);
     }
 
     @Override
-    public void removeMixin(String mixinName) throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException, RepositoryException {
+    public void removeMixin(String mixinName)
+            throws NoSuchNodeTypeException, VersionException, ConstraintViolationException, LockException,
+                    RepositoryException {
         this.delegate.removeMixin(mixinName);
     }
 
@@ -292,37 +336,50 @@ public class ProxyNode extends ProxyItem<Node> implements Node {
     }
 
     @Override
-    public Version checkin() throws VersionException, UnsupportedRepositoryOperationException, InvalidItemStateException, LockException, RepositoryException {
+    public Version checkin()
+            throws VersionException, UnsupportedRepositoryOperationException, InvalidItemStateException, LockException,
+                    RepositoryException {
         return this.delegate.checkin();
     }
 
     @Override
-    public void checkout() throws UnsupportedRepositoryOperationException, LockException, ActivityViolationException, RepositoryException {
+    public void checkout()
+            throws UnsupportedRepositoryOperationException, LockException, ActivityViolationException,
+                    RepositoryException {
         this.delegate.checkout();
     }
 
     @Override
-    public void doneMerge(Version version) throws VersionException, InvalidItemStateException, UnsupportedRepositoryOperationException, RepositoryException {
+    public void doneMerge(Version version)
+            throws VersionException, InvalidItemStateException, UnsupportedRepositoryOperationException,
+                    RepositoryException {
         this.delegate.doneMerge(version);
     }
 
     @Override
-    public void cancelMerge(Version version) throws VersionException, InvalidItemStateException, UnsupportedRepositoryOperationException, RepositoryException {
+    public void cancelMerge(Version version)
+            throws VersionException, InvalidItemStateException, UnsupportedRepositoryOperationException,
+                    RepositoryException {
         this.delegate.cancelMerge(version);
     }
 
     @Override
-    public void update(String srcWorkspace) throws NoSuchWorkspaceException, AccessDeniedException, LockException, InvalidItemStateException, RepositoryException {
+    public void update(String srcWorkspace)
+            throws NoSuchWorkspaceException, AccessDeniedException, LockException, InvalidItemStateException,
+                    RepositoryException {
         this.delegate.update(srcWorkspace);
     }
 
     @Override
-    public NodeIterator merge(String srcWorkspace, boolean bestEffort) throws NoSuchWorkspaceException, AccessDeniedException, MergeException, LockException, InvalidItemStateException, RepositoryException {
+    public NodeIterator merge(String srcWorkspace, boolean bestEffort)
+            throws NoSuchWorkspaceException, AccessDeniedException, MergeException, LockException,
+                    InvalidItemStateException, RepositoryException {
         return this.mountSession.wrap(this.delegate.merge(srcWorkspace, bestEffort));
     }
 
     @Override
-    public String getCorrespondingNodePath(String workspaceName) throws ItemNotFoundException, NoSuchWorkspaceException, AccessDeniedException, RepositoryException {
+    public String getCorrespondingNodePath(String workspaceName)
+            throws ItemNotFoundException, NoSuchWorkspaceException, AccessDeniedException, RepositoryException {
         return this.delegate.getCorrespondingNodePath(workspaceName);
     }
 
@@ -332,12 +389,14 @@ public class ProxyNode extends ProxyItem<Node> implements Node {
     }
 
     @Override
-    public void removeSharedSet() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public void removeSharedSet()
+            throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         this.delegate.removeSharedSet();
     }
 
     @Override
-    public void removeShare() throws VersionException, LockException, ConstraintViolationException, RepositoryException {
+    public void removeShare()
+            throws VersionException, LockException, ConstraintViolationException, RepositoryException {
         this.delegate.removeShare();
     }
 
@@ -347,22 +406,31 @@ public class ProxyNode extends ProxyItem<Node> implements Node {
     }
 
     @Override
-    public void restore(String versionName, boolean removeExisting) throws VersionException, ItemExistsException, UnsupportedRepositoryOperationException, LockException, InvalidItemStateException, RepositoryException {
+    public void restore(String versionName, boolean removeExisting)
+            throws VersionException, ItemExistsException, UnsupportedRepositoryOperationException, LockException,
+                    InvalidItemStateException, RepositoryException {
         this.delegate.restore(versionName, removeExisting);
     }
 
     @Override
-    public void restore(Version version, boolean removeExisting) throws VersionException, ItemExistsException, InvalidItemStateException, UnsupportedRepositoryOperationException, LockException, RepositoryException {
+    public void restore(Version version, boolean removeExisting)
+            throws VersionException, ItemExistsException, InvalidItemStateException,
+                    UnsupportedRepositoryOperationException, LockException, RepositoryException {
         this.delegate.restore(version, removeExisting);
     }
 
     @Override
-    public void restore(Version version, String relPath, boolean removeExisting) throws PathNotFoundException, ItemExistsException, VersionException, ConstraintViolationException, UnsupportedRepositoryOperationException, LockException, InvalidItemStateException, RepositoryException {
+    public void restore(Version version, String relPath, boolean removeExisting)
+            throws PathNotFoundException, ItemExistsException, VersionException, ConstraintViolationException,
+                    UnsupportedRepositoryOperationException, LockException, InvalidItemStateException,
+                    RepositoryException {
         this.delegate.restore(version, relPath, removeExisting);
     }
 
     @Override
-    public void restoreByLabel(String versionLabel, boolean removeExisting) throws VersionException, ItemExistsException, UnsupportedRepositoryOperationException, LockException, InvalidItemStateException, RepositoryException {
+    public void restoreByLabel(String versionLabel, boolean removeExisting)
+            throws VersionException, ItemExistsException, UnsupportedRepositoryOperationException, LockException,
+                    InvalidItemStateException, RepositoryException {
         this.delegate.restoreByLabel(versionLabel, removeExisting);
     }
 
@@ -377,17 +445,22 @@ public class ProxyNode extends ProxyItem<Node> implements Node {
     }
 
     @Override
-    public Lock lock(boolean isDeep, boolean isSessionScoped) throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, InvalidItemStateException, RepositoryException {
+    public Lock lock(boolean isDeep, boolean isSessionScoped)
+            throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException,
+                    InvalidItemStateException, RepositoryException {
         return this.mountSession.wrap(this.delegate.lock(isDeep, isSessionScoped));
     }
 
     @Override
-    public Lock getLock() throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, RepositoryException {
+    public Lock getLock()
+            throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, RepositoryException {
         return this.mountSession.wrap(this.delegate.getLock());
     }
 
     @Override
-    public void unlock() throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException, InvalidItemStateException, RepositoryException {
+    public void unlock()
+            throws UnsupportedRepositoryOperationException, LockException, AccessDeniedException,
+                    InvalidItemStateException, RepositoryException {
         this.delegate.unlock();
     }
 
@@ -402,12 +475,14 @@ public class ProxyNode extends ProxyItem<Node> implements Node {
     }
 
     @Override
-    public void followLifecycleTransition(String transition) throws UnsupportedRepositoryOperationException, InvalidLifecycleTransitionException, RepositoryException {
+    public void followLifecycleTransition(String transition)
+            throws UnsupportedRepositoryOperationException, InvalidLifecycleTransitionException, RepositoryException {
         this.delegate.followLifecycleTransition(transition);
     }
 
     @Override
-    public String[] getAllowedLifecycleTransistions() throws UnsupportedRepositoryOperationException, RepositoryException {
+    public String[] getAllowedLifecycleTransistions()
+            throws UnsupportedRepositoryOperationException, RepositoryException {
         return this.delegate.getAllowedLifecycleTransistions();
     }
 }

@@ -18,15 +18,15 @@
  */
 package org.apache.sling.jcr.base;
 
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+import javax.jcr.Workspace;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
-
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
-import javax.jcr.Workspace;
 
 import org.apache.jackrabbit.commons.cnd.CndImporter;
 import org.apache.jackrabbit.commons.cnd.ParseException;
@@ -34,10 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The <code>NodeTypeSupport</code> contains utility methods to register node
- * types from a <a href="http://jackrabbit.apache.org/doc/nodetype/cnd.html">CND
- * nodetype definition</a> file given as an URL or InputStream with the
- * repository.
+ * The <code>NodeTypeSupport</code> contains utility methods to register node types from a <a
+ * href="http://jackrabbit.apache.org/doc/nodetype/cnd.html">CND nodetype definition</a> file given
+ * as an URL or InputStream with the repository.
  */
 public class NodeTypeLoader {
 
@@ -45,19 +44,18 @@ public class NodeTypeLoader {
     private static final Logger log = LoggerFactory.getLogger(NodeTypeLoader.class);
 
     /**
-     * Registers node types from the CND file accessible by the <code>URL</code>
-     * with the node type manager available from the given <code>session</code>.
-     * <p>
-     * The <code>NodeTypeManager</code> returned by the <code>session</code>'s
-     * workspace is expected to be of type
-     * <code>org.apache.jackrabbit.api.JackrabbitNodeTypeManager</code> for
-     * the node type registration to succeed.
-     * <p>
-     * This method is not synchronized. It is up to the calling method to
-     * prevent paralell execution.
+     * Registers node types from the CND file accessible by the <code>URL</code> with the node type
+     * manager available from the given <code>session</code>.
      *
-     * @param session The <code>Session</code> providing the node type manager
-     *            through which the node type is to be registered.
+     * <p>The <code>NodeTypeManager</code> returned by the <code>session</code>'s workspace is
+     * expected to be of type <code>org.apache.jackrabbit.api.JackrabbitNodeTypeManager</code> for the
+     * node type registration to succeed.
+     *
+     * <p>This method is not synchronized. It is up to the calling method to prevent paralell
+     * execution.
+     *
+     * @param session The <code>Session</code> providing the node type manager through which the node
+     *     type is to be registered.
      * @param source The URL from which to read the CND file
      * @return <code>true</code> if registration of all node types succeeded.
      */
@@ -76,7 +74,7 @@ public class NodeTypeLoader {
         } catch (IOException ioe) {
             log.error("Cannot register node types from " + source, ioe);
         } catch (RepositoryException re) {
-            if(isReRegisterBuiltinNodeType(re)) {
+            if (isReRegisterBuiltinNodeType(re)) {
                 log.debug("Attempt to re-register built-in node type from " + source, re);
             } else {
                 log.error("Cannot register node types from " + source, re);
@@ -95,21 +93,19 @@ public class NodeTypeLoader {
     }
 
     /**
-     * Registers node types from the CND file read from the <code>source</code>
-     * with the node type manager available from the given <code>session</code>.
-     * <p>
-     * The <code>NodeTypeManager</code> returned by the <code>session</code>'s
-     * workspace is expected to be of type
-     * <code>org.apache.jackrabbit.api.JackrabbitNodeTypeManager</code> for
-     * the node type registration to succeed.
-     * <p>
-     * This method is not synchronized. It is up to the calling method to
-     * prevent paralell execution.
+     * Registers node types from the CND file read from the <code>source</code> with the node type
+     * manager available from the given <code>session</code>.
      *
-     * @param session The <code>Session</code> providing the node type manager
-     *            through which the node type is to be registered.
-     * @param source The <code>InputStream</code> from which the CND file is
-     *            read.
+     * <p>The <code>NodeTypeManager</code> returned by the <code>session</code>'s workspace is
+     * expected to be of type <code>org.apache.jackrabbit.api.JackrabbitNodeTypeManager</code> for the
+     * node type registration to succeed.
+     *
+     * <p>This method is not synchronized. It is up to the calling method to prevent paralell
+     * execution.
+     *
+     * @param session The <code>Session</code> providing the node type manager through which the node
+     *     type is to be registered.
+     * @param source The <code>InputStream</code> from which the CND file is read.
      * @return <code>true</code> if registration of all node types succeeded.
      * @throws IOException if there is an error parsing the input stream
      * @throws RepositoryException if another error occurs
@@ -120,12 +116,18 @@ public class NodeTypeLoader {
     }
 
     public static boolean registerNodeType(Session session, String systemId, Reader reader, boolean reregisterExisting)
-        throws IOException, RepositoryException {
+            throws IOException, RepositoryException {
         try {
             Workspace wsp = session.getWorkspace();
-            CndImporter.registerNodeTypes(reader, systemId, wsp.getNodeTypeManager(), wsp.getNamespaceRegistry(), session.getValueFactory(), reregisterExisting);
-        } catch(RepositoryException re) {
-            if(isReRegisterBuiltinNodeType(re)) {
+            CndImporter.registerNodeTypes(
+                    reader,
+                    systemId,
+                    wsp.getNodeTypeManager(),
+                    wsp.getNamespaceRegistry(),
+                    session.getValueFactory(),
+                    reregisterExisting);
+        } catch (RepositoryException re) {
+            if (isReRegisterBuiltinNodeType(re)) {
                 log.debug("Attempt to re-register built-in node type, RepositoryException ignored", re);
             } else {
                 throw re;
@@ -135,11 +137,10 @@ public class NodeTypeLoader {
         }
         return true;
     }
-    
+
     /** True if we think e was caused by an attempt to reregister a built-in node type */
     static boolean isReRegisterBuiltinNodeType(Exception e) {
-        return 
-            (e instanceof RepositoryException)
-            & (e.getMessage() != null && e.getMessage().contains("reregister built-in node type"));
+        return (e instanceof RepositoryException)
+                & (e.getMessage() != null && e.getMessage().contains("reregister built-in node type"));
     }
 }

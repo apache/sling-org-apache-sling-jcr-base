@@ -21,21 +21,24 @@ package org.apache.sling.jcr.base;
 import javax.jcr.RepositoryException;
 
 import org.junit.Test;
+
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class NodeTypeLoaderTest {
-    
+
     @Test
     public void testisReRegisterBuiltinNodeType() {
-        assertFalse("Exception does not match", 
-                NodeTypeLoader.isReRegisterBuiltinNodeType(new Exception()));
-        assertFalse("Plain RepositoryException does not match", 
+        assertFalse("Exception does not match", NodeTypeLoader.isReRegisterBuiltinNodeType(new Exception()));
+        assertFalse(
+                "Plain RepositoryException does not match",
                 NodeTypeLoader.isReRegisterBuiltinNodeType(new RepositoryException()));
-        assertFalse("Non-reregister RepositoryException does not match", 
+        assertFalse(
+                "Non-reregister RepositoryException does not match",
                 NodeTypeLoader.isReRegisterBuiltinNodeType(new RepositoryException("builtin that's it")));
-        assertTrue("Reregister RepositoryException matches", 
-                NodeTypeLoader.isReRegisterBuiltinNodeType(
-                        new RepositoryException("{http://www.jcp.org/jcr/mix/1.0}language: can't reregister built-in node type")));
+        assertTrue(
+                "Reregister RepositoryException matches",
+                NodeTypeLoader.isReRegisterBuiltinNodeType(new RepositoryException(
+                        "{http://www.jcp.org/jcr/mix/1.0}language: can't reregister built-in node type")));
     }
 }

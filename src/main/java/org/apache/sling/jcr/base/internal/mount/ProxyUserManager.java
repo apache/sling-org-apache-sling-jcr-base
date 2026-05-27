@@ -18,11 +18,11 @@
  */
 package org.apache.sling.jcr.base.internal.mount;
 
-import java.security.Principal;
-import java.util.Iterator;
-
 import javax.jcr.RepositoryException;
 import javax.jcr.UnsupportedRepositoryOperationException;
+
+import java.security.Principal;
+import java.util.Iterator;
 
 import org.apache.jackrabbit.api.JackrabbitSession;
 import org.apache.jackrabbit.api.security.user.Authorizable;
@@ -41,12 +41,12 @@ public class ProxyUserManager extends ProxyWrapper<UserManager> implements UserM
         this.mount = mount;
     }
 
-
     public Authorizable getAuthorizable(String id) throws RepositoryException {
         return delegate.getAuthorizable(id);
     }
 
-    public <T extends Authorizable> T getAuthorizable(String id, Class<T> authorizableClass) throws AuthorizableTypeException, RepositoryException {
+    public <T extends Authorizable> T getAuthorizable(String id, Class<T> authorizableClass)
+            throws AuthorizableTypeException, RepositoryException {
         return delegate.getAuthorizable(id, authorizableClass);
     }
 
@@ -54,7 +54,8 @@ public class ProxyUserManager extends ProxyWrapper<UserManager> implements UserM
         return delegate.getAuthorizable(principal);
     }
 
-    public Authorizable getAuthorizableByPath(String path) throws UnsupportedRepositoryOperationException, RepositoryException {
+    public Authorizable getAuthorizableByPath(String path)
+            throws UnsupportedRepositoryOperationException, RepositoryException {
         return delegate.getAuthorizableByPath(path);
     }
 
@@ -62,7 +63,8 @@ public class ProxyUserManager extends ProxyWrapper<UserManager> implements UserM
         return delegate.findAuthorizables(relPath, value);
     }
 
-    public Iterator<Authorizable> findAuthorizables(String relPath, String value, int searchType) throws RepositoryException {
+    public Iterator<Authorizable> findAuthorizables(String relPath, String value, int searchType)
+            throws RepositoryException {
         return delegate.findAuthorizables(relPath, value, searchType);
     }
 
@@ -76,13 +78,15 @@ public class ProxyUserManager extends ProxyWrapper<UserManager> implements UserM
         return user;
     }
 
-    public User createUser(String userID, String password, Principal principal, String intermediatePath) throws AuthorizableExistsException, RepositoryException {
+    public User createUser(String userID, String password, Principal principal, String intermediatePath)
+            throws AuthorizableExistsException, RepositoryException {
         User user = delegate.createUser(userID, password, principal, intermediatePath);
         mount.createUser(userID, password, principal, user.getPath());
         return user;
     }
 
-    public User createSystemUser(String userID, String intermediatePath) throws AuthorizableExistsException, RepositoryException {
+    public User createSystemUser(String userID, String intermediatePath)
+            throws AuthorizableExistsException, RepositoryException {
         User user = delegate.createSystemUser(userID, intermediatePath);
         mount.createSystemUser(userID, user.getPath());
         return user;
@@ -100,13 +104,15 @@ public class ProxyUserManager extends ProxyWrapper<UserManager> implements UserM
         return group;
     }
 
-    public Group createGroup(Principal principal, String intermediatePath) throws AuthorizableExistsException, RepositoryException {
+    public Group createGroup(Principal principal, String intermediatePath)
+            throws AuthorizableExistsException, RepositoryException {
         Group group = delegate.createGroup(principal, intermediatePath);
         mount.createGroup(principal, group.getPath());
         return group;
     }
 
-    public Group createGroup(String groupID, Principal principal, String intermediatePath) throws AuthorizableExistsException, RepositoryException {
+    public Group createGroup(String groupID, Principal principal, String intermediatePath)
+            throws AuthorizableExistsException, RepositoryException {
         Group group = delegate.createGroup(groupID, principal, intermediatePath);
         mount.createGroup(groupID, principal, group.getPath());
         return group;

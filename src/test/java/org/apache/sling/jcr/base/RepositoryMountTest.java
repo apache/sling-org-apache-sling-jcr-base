@@ -18,13 +18,14 @@
  */
 package org.apache.sling.jcr.base;
 
-import java.util.Dictionary;
-import java.util.Properties;
 import javax.jcr.Node;
 import javax.jcr.Repository;
 import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.nodetype.NodeType;
+
+import java.util.Dictionary;
+import java.util.Properties;
 
 import org.apache.sling.jcr.base.spi.RepositoryMount;
 import org.apache.sling.testing.mock.jcr.MockJcr;
@@ -36,8 +37,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.osgi.framework.ServiceRegistration;
 
-public class RepositoryMountTest
-{
+public class RepositoryMountTest {
     @Rule
     public final SlingContext context = new SlingContext(ResourceResolverType.JCR_MOCK);
 
@@ -46,8 +46,7 @@ public class RepositoryMountTest
     private MockSlingRepositoryManager manager;
 
     @Before
-    public void setup() throws RepositoryException
-    {
+    public void setup() throws RepositoryException {
         rootRepository = MockJcr.newRepository();
         mountRepository = MockJcr.newRepository();
 
@@ -57,15 +56,18 @@ public class RepositoryMountTest
     @Test
     public void testRepositoryMount() throws RepositoryException {
         Session rootSession = rootRepository.login();
-        rootSession.getRootNode()
-            .addNode("/root", NodeType.NT_UNSTRUCTURED)
-            .addNode("test", NodeType.NT_UNSTRUCTURED)
-            .setProperty("test", "root");
+        rootSession
+                .getRootNode()
+                .addNode("/root", NodeType.NT_UNSTRUCTURED)
+                .addNode("test", NodeType.NT_UNSTRUCTURED)
+                .setProperty("test", "root");
 
         Session mountSession = mountRepository.login();
-        mountSession.getRootNode().addNode("/mount")
-            .addNode("test", NodeType.NT_UNSTRUCTURED)
-            .setProperty("test", "test");
+        mountSession
+                .getRootNode()
+                .addNode("/mount")
+                .addNode("test", NodeType.NT_UNSTRUCTURED)
+                .setProperty("test", "test");
 
         Assert.assertFalse(rootSession.nodeExists("/mount"));
         Assert.assertFalse(mountSession.nodeExists("/root"));
@@ -86,7 +88,8 @@ public class RepositoryMountTest
         Properties props = new Properties();
         props.put(RepositoryMount.MOUNT_POINTS_KEY, "/mount");
 
-        ServiceRegistration reg = context.bundleContext().registerService(RepositoryMount.class.getName(), mountRepository, (Dictionary) props);
+        ServiceRegistration reg = context.bundleContext()
+                .registerService(RepositoryMount.class.getName(), mountRepository, (Dictionary) props);
 
         session = repository.login();
 
@@ -113,7 +116,8 @@ public class RepositoryMountTest
 
         session.logout();
 
-        reg = context.bundleContext().registerService(RepositoryMount.class.getName(), mountRepository, (Dictionary) props);
+        reg = context.bundleContext()
+                .registerService(RepositoryMount.class.getName(), mountRepository, (Dictionary) props);
 
         session = repository.login();
 
@@ -132,7 +136,13 @@ public class RepositoryMountTest
     }
 
     private void testTraversal(Session session, String path, String value) throws RepositoryException {
-        Assert.assertEquals(value, session.getRootNode().getNode(path).getNode("test").getProperty("test").getString());
+        Assert.assertEquals(
+                value,
+                session.getRootNode()
+                        .getNode(path)
+                        .getNode("test")
+                        .getProperty("test")
+                        .getString());
     }
 
     private void testCreate(Repository repo, String start, String... path) throws RepositoryException {

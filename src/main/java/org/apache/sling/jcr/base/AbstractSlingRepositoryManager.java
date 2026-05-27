@@ -18,6 +18,8 @@
  */
 package org.apache.sling.jcr.base;
 
+import javax.jcr.Repository;
+
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Dictionary;
@@ -27,13 +29,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.jcr.Repository;
-
 import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.sling.jcr.api.SlingRepository;
 import org.apache.sling.jcr.api.SlingRepositoryInitializer;
-import org.apache.sling.jcr.base.internal.loader.Loader;
 import org.apache.sling.jcr.base.internal.LoginAdminAllowList;
+import org.apache.sling.jcr.base.internal.loader.Loader;
 import org.apache.sling.jcr.base.internal.mount.ProxyJackrabbitRepository;
 import org.apache.sling.jcr.base.internal.mount.ProxyRepository;
 import org.apache.sling.jcr.base.spi.RepositoryMount;
@@ -50,44 +50,44 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The <code>AbstractSlingRepositoryManager</code> is the basis for controlling
- * the JCR repository instances used by Sling. As a manager it starts and stops
- * the actual repository instance, manages service registration and hands out
- * {@code SlingRepository} instances to be used by the consumers.
- * <p>
- * This base class controls the livecycle of repository instance whereas
- * implementations of this class provide actual integration into the runtime
- * context. The livecycle of the repository instance is defined as follows:
- * <p>
- * To start the repository instance, the implementation calls the
- * {@link #start(BundleContext, String, boolean)}method which goes through the
- * steps of instantiating the repository, setting things up, and registering the
- * repository as an OSGi service:
+ * The <code>AbstractSlingRepositoryManager</code> is the basis for controlling the JCR repository
+ * instances used by Sling. As a manager it starts and stops the actual repository instance, manages
+ * service registration and hands out {@code SlingRepository} instances to be used by the consumers.
+ *
+ * <p>This base class controls the livecycle of repository instance whereas implementations of this
+ * class provide actual integration into the runtime context. The livecycle of the repository
+ * instance is defined as follows:
+ *
+ * <p>To start the repository instance, the implementation calls the {@link #start(BundleContext,
+ * String, boolean)}method which goes through the steps of instantiating the repository, setting
+ * things up, and registering the repository as an OSGi service:
+ *
  * <ol>
- * <li>{@link #acquireRepository()}</li>
- * <li>{@link #create(Bundle)}</li>
- * <li>{@link #registerService()}</li>
+ *   <li>{@link #acquireRepository()}
+ *   <li>{@link #create(Bundle)}
+ *   <li>{@link #registerService()}
  * </ol>
- * Earlier versions of this class had an additional <code>setup</code> method,
- * whatever code was there can be moved to the <code>create</code> method.
- * <p>
- * If starting the repository fails, the method {@link #stoppingOnError(String, Throwable)}
- * will be called. By default the exception is logged as an error, but this can
- * be customized by overwriting the method.
- * <p>
- * To stop the repository instance, the implementation calls the {@link #stop()}
- * method which goes through the steps of unregistering the OSGi service,
- * tearing all special settings down and finally shutting down the repository:
+ *
+ * Earlier versions of this class had an additional <code>setup</code> method, whatever code was
+ * there can be moved to the <code>create</code> method.
+ *
+ * <p>If starting the repository fails, the method {@link #stoppingOnError(String, Throwable)} will
+ * be called. By default the exception is logged as an error, but this can be customized by
+ * overwriting the method.
+ *
+ * <p>To stop the repository instance, the implementation calls the {@link #stop()} method which
+ * goes through the steps of unregistering the OSGi service, tearing all special settings down and
+ * finally shutting down the repository:
+ *
  * <ol>
- * <li>{@link #unregisterService(ServiceRegistration)}</li>
- * <li>{@link #destroy(AbstractSlingRepository2)}</li>
- * <li>{@link #disposeRepository(Repository)}</li>
+ *   <li>{@link #unregisterService(ServiceRegistration)}
+ *   <li>{@link #destroy(AbstractSlingRepository2)}
+ *   <li>{@link #disposeRepository(Repository)}
  * </ol>
- * <p>
- * Instances of this class manage a single repository instance backing the OSGi
- * service instances. Each consuming bundle, though, gets its own service
- * instance backed by the single actual repository instance managed by this
- * class.
+ *
+ * <p>Instances of this class manage a single repository instance backing the OSGi service
+ * instances. Each consuming bundle, though, gets its own service instance backed by the single
+ * actual repository instance managed by this class.
  *
  * @see AbstractSlingRepository2
  * @since API version 2.3 (bundle version 2.2.2)
@@ -97,8 +97,9 @@ public abstract class AbstractSlingRepositoryManager {
 
     private static final AtomicInteger startupCounter = new AtomicInteger();
 
-    private static final String INTERRUPTED_EXCEPTION_NOTE = "Avoid using Thread.interrupt() with Oak! See https://jackrabbit.apache.org/oak/docs/dos_and_donts.html .";
-    
+    private static final String INTERRUPTED_EXCEPTION_NOTE = "Avoid using Thread.interrupt() with Oak! See"
+            + " https://jackrabbit.apache.org/oak/docs/dos_and_donts.html .";
+
     /** default log */
     private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -133,86 +134,76 @@ public abstract class AbstractSlingRepositoryManager {
     private volatile long startupThreadWaitMillis;
 
     /**
-     * Returns the default workspace, which may be <code>null</code> meaning to
-     * use the repository provided default workspace.
+     * Returns the default workspace, which may be <code>null</code> meaning to use the repository
+     * provided default workspace.
      *
-     * @return the default workspace or {@code null} indicating the repository's
-     *         default workspace is actually used.
+     * @return the default workspace or {@code null} indicating the repository's default workspace is
+     *     actually used.
      */
     public final String getDefaultWorkspace() {
         return defaultWorkspace;
     }
 
     /**
-     * Returns whether to disable the
-     * {@code SlingRepository.loginAdministrative} method or not.
+     * Returns whether to disable the {@code SlingRepository.loginAdministrative} method or not.
      *
-     * @return {@code true} if {@code SlingRepository.loginAdministrative} is
-     *         disabled.
+     * @return {@code true} if {@code SlingRepository.loginAdministrative} is disabled.
      */
     public final boolean isDisableLoginAdministrative() {
         return disableLoginAdministrative;
     }
 
     /**
-     * Returns the {@code ServiceUserMapper} service to map the service name to
-     * a service user name.
-     * <p>
-     * The {@code ServiceUserMapper} is used to implement the
-     * {@link AbstractSlingRepository2#loginService(String, String)} method used
-     * to replace the
-     * {@link AbstractSlingRepository2#loginAdministrative(String)} method. If
-     * this method returns {@code null} and hence the
-     * {@code ServiceUserMapperService} is not available, the
-     * {@code loginService} method is not able to login.
+     * Returns the {@code ServiceUserMapper} service to map the service name to a service user name.
      *
-     * @return The {@code ServiceUserMapper} service or {@code null} if not
-     *         available.
+     * <p>The {@code ServiceUserMapper} is used to implement the {@link
+     * AbstractSlingRepository2#loginService(String, String)} method used to replace the {@link
+     * AbstractSlingRepository2#loginAdministrative(String)} method. If this method returns {@code
+     * null} and hence the {@code ServiceUserMapperService} is not available, the {@code loginService}
+     * method is not able to login.
+     *
+     * @return The {@code ServiceUserMapper} service or {@code null} if not available.
      * @see AbstractSlingRepository2#loginService(String, String)
      */
     protected abstract ServiceUserMapper getServiceUserMapper();
 
     /**
-     * Returns whether or not the provided bundle is allowed to use
-     * {@link SlingRepository#loginAdministrative(String)}.
+     * Returns whether or not the provided bundle is allowed to use {@link
+     * SlingRepository#loginAdministrative(String)}.
      *
      * @param bundle The bundle requiring access to {@code loginAdministrative}
-     * @return A boolean value indicating whether or not the bundle is allowed
-     *         to use {@code loginAdministrative}.
+     * @return A boolean value indicating whether or not the bundle is allowed to use {@code
+     *     loginAdministrative}.
      */
     protected boolean allowLoginAdministrativeForBundle(final Bundle bundle) {
         return allowListTracker.getService().allowLoginAdministrative(bundle);
     }
 
     /**
-     * Creates the backing JCR repository instances. It is expected for this
-     * method to just start the repository.
-     * <p>
-     * This method does not throw any <code>Throwable</code> but instead just
-     * returns <code>null</code> if not repository is available. Any problems
-     * trying to acquire the repository must be caught and logged as
-     * appropriate.
+     * Creates the backing JCR repository instances. It is expected for this method to just start the
+     * repository.
      *
-     * @return The acquired JCR <code>Repository</code> or <code>null</code> if
-     *         not repository can be acquired.
+     * <p>This method does not throw any <code>Throwable</code> but instead just returns <code>null
+     * </code> if not repository is available. Any problems trying to acquire the repository must be
+     * caught and logged as appropriate.
+     *
+     * @return The acquired JCR <code>Repository</code> or <code>null</code> if not repository can be
+     *     acquired.
      * @see #start(BundleContext, String, boolean)
      */
     protected abstract Repository acquireRepository();
 
     /**
-     * Registers this component as an OSGi service with the types provided by
-     * the {@link #getServiceRegistrationInterfaces()} method and properties
-     * provided by the {@link #getServiceRegistrationProperties()} method.
-     * <p>
-     * The repository is actually registered as an OSGi {@code ServiceFactory}
-     * where the {@link #create(Bundle)} method is called to create an actual
-     * {@link AbstractSlingRepository2} repository instance for a calling
-     * (using) bundle. When the bundle is done using the repository instance,
-     * the {@link #destroy(AbstractSlingRepository2)} method is called to clean
-     * up.
+     * Registers this component as an OSGi service with the types provided by the {@link
+     * #getServiceRegistrationInterfaces()} method and properties provided by the {@link
+     * #getServiceRegistrationProperties()} method.
      *
-     * @return The OSGi <code>ServiceRegistration</code> object representing the
-     *         registered service.
+     * <p>The repository is actually registered as an OSGi {@code ServiceFactory} where the {@link
+     * #create(Bundle)} method is called to create an actual {@link AbstractSlingRepository2}
+     * repository instance for a calling (using) bundle. When the bundle is done using the repository
+     * instance, the {@link #destroy(AbstractSlingRepository2)} method is called to clean up.
+     *
+     * @return The OSGi <code>ServiceRegistration</code> object representing the registered service.
      * @see #start(BundleContext, String, boolean)
      * @see #getServiceRegistrationInterfaces()
      * @see #getServiceRegistrationProperties()
@@ -223,78 +214,80 @@ public abstract class AbstractSlingRepositoryManager {
         final Dictionary<String, Object> props = getServiceRegistrationProperties();
         final String[] interfaces = getServiceRegistrationInterfaces();
 
-        return bundleContext.registerService(interfaces, new ServiceFactory<AbstractSlingRepository2>() {
-            @Override
-            public AbstractSlingRepository2 getService(Bundle bundle, ServiceRegistration<AbstractSlingRepository2> registration) {
-                return AbstractSlingRepositoryManager.this.create(bundle);
-            }
+        return bundleContext.registerService(
+                interfaces,
+                new ServiceFactory<AbstractSlingRepository2>() {
+                    @Override
+                    public AbstractSlingRepository2 getService(
+                            Bundle bundle, ServiceRegistration<AbstractSlingRepository2> registration) {
+                        return AbstractSlingRepositoryManager.this.create(bundle);
+                    }
 
-            @Override
-            public void ungetService(Bundle bundle, ServiceRegistration<AbstractSlingRepository2> registration, AbstractSlingRepository2 service) {
-                AbstractSlingRepositoryManager.this.destroy(service);
-            }
-        }, props);
+                    @Override
+                    public void ungetService(
+                            Bundle bundle,
+                            ServiceRegistration<AbstractSlingRepository2> registration,
+                            AbstractSlingRepository2 service) {
+                        AbstractSlingRepositoryManager.this.destroy(service);
+                    }
+                },
+                props);
     }
 
     /**
-     * Return the service registration properties to be used to register the
-     * repository service in {@link #registerService()}.
+     * Return the service registration properties to be used to register the repository service in
+     * {@link #registerService()}.
      *
-     * @return The service registration properties to be used to register the
-     *         repository service in {@link #registerService()}
+     * @return The service registration properties to be used to register the repository service in
+     *     {@link #registerService()}
      * @see #registerService()
      */
     protected abstract Dictionary<String, Object> getServiceRegistrationProperties();
 
     /**
-     * Returns the service types to be used to register the repository service
-     * in {@link #registerService()}. All interfaces returned must be accessible
-     * to the class loader of the class of this instance.
-     * <p>
-     * This method may be overwritten to return additional types but the types
-     * returned from this base implementation, {@code SlingRepository} and
-     * {@code Repository}, must always be included.
+     * Returns the service types to be used to register the repository service in {@link
+     * #registerService()}. All interfaces returned must be accessible to the class loader of the
+     * class of this instance.
      *
-     * @return The service types to be used to register the repository service
-     *         in {@link #registerService()}
+     * <p>This method may be overwritten to return additional types but the types returned from this
+     * base implementation, {@code SlingRepository} and {@code Repository}, must always be included.
+     *
+     * @return The service types to be used to register the repository service in {@link
+     *     #registerService()}
      * @see #registerService()
      */
     protected String[] getServiceRegistrationInterfaces() {
-        return new String[] {
-            SlingRepository.class.getName(), Repository.class.getName()
-        };
+        return new String[] {SlingRepository.class.getName(), Repository.class.getName()};
     }
 
     /**
-     * Creates an instance of the {@link AbstractSlingRepository2}
-     * implementation for use by the given {@code usingBundle}.
-     * <p>
-     * This method is called when the repository service is requested from
-     * within the using bundle for the first time.
-     * <p>
-     * This method is expected to return a new instance on every call.
+     * Creates an instance of the {@link AbstractSlingRepository2} implementation for use by the given
+     * {@code usingBundle}.
      *
-     * @param usingBundle The bundle providing from which the repository is
-     *            requested.
-     * @return The {@link AbstractSlingRepository2} implementation instance to
-     *         be used by the {@code usingBundle}.
+     * <p>This method is called when the repository service is requested from within the using bundle
+     * for the first time.
+     *
+     * <p>This method is expected to return a new instance on every call.
+     *
+     * @param usingBundle The bundle providing from which the repository is requested.
+     * @return The {@link AbstractSlingRepository2} implementation instance to be used by the {@code
+     *     usingBundle}.
      * @see #registerService()
      */
     protected abstract AbstractSlingRepository2 create(Bundle usingBundle);
 
     /**
-     * Cleans up the given {@link AbstractSlingRepository2} instance previously
-     * created by the {@link #create(Bundle)} method.
+     * Cleans up the given {@link AbstractSlingRepository2} instance previously created by the {@link
+     * #create(Bundle)} method.
      *
-     * @param repositoryServiceInstance The {@link AbstractSlingRepository2}
-     *            istance to cleanup.
+     * @param repositoryServiceInstance The {@link AbstractSlingRepository2} istance to cleanup.
      * @see #registerService()
      */
     protected abstract void destroy(AbstractSlingRepository2 repositoryServiceInstance);
 
     /**
-     * Returns the repository underlying this instance or <code>null</code> if
-     * no repository is currently being available.
+     * Returns the repository underlying this instance or <code>null</code> if no repository is
+     * currently being available.
      *
      * @return The repository
      */
@@ -310,24 +303,22 @@ public abstract class AbstractSlingRepositoryManager {
                 for (String mount : ((String[]) mounts)) {
                     mountPoints.add(mount);
                 }
-            }
-            else {
+            } else {
                 mountPoints.add(mounts.toString());
             }
-        }
-        else {
+        } else {
             mountPoints.add("/content/jcrmount");
         }
-        return mountRepo != null ?
-            repository instanceof JackrabbitRepository ?
-                new ProxyJackrabbitRepository((JackrabbitRepository) repository, (JackrabbitRepository) mountRepo, mountPoints) :
-                new ProxyRepository<>(repository, mountRepo, mountPoints) :
-            repository;
+        return mountRepo != null
+                ? repository instanceof JackrabbitRepository
+                        ? new ProxyJackrabbitRepository(
+                                (JackrabbitRepository) repository, (JackrabbitRepository) mountRepo, mountPoints)
+                        : new ProxyRepository<>(repository, mountRepo, mountPoints)
+                : repository;
     }
 
     /**
-     * Unregisters the service represented by the
-     * <code>serviceRegistration</code>.
+     * Unregisters the service represented by the <code>serviceRegistration</code>.
      *
      * @param serviceRegistration The service to unregister
      */
@@ -338,16 +329,16 @@ public abstract class AbstractSlingRepositoryManager {
     /**
      * Disposes off the given <code>repository</code>.
      *
-     * @param repository The repository to be disposed off which is the same as
-     *            the one returned from {@link #acquireRepository()}.
+     * @param repository The repository to be disposed off which is the same as the one returned from
+     *     {@link #acquireRepository()}.
      */
     protected abstract void disposeRepository(Repository repository);
 
     /**
-     * Called when the repository service cannot be initialized or registered
-     * because an exception occurred.
-     * <p>
-     * This default implementation logs the exception as an error.
+     * Called when the repository service cannot be initialized or registered because an exception
+     * occurred.
+     *
+     * <p>This default implementation logs the exception as an error.
      *
      * @param message failure details.
      * @param t the exception.
@@ -362,29 +353,28 @@ public abstract class AbstractSlingRepositoryManager {
      * This method was deprecated with the introduction of asynchronous repository registration. With
      * asynchronous registration a boolean return value can no longer be guaranteed, as registration
      * may happen after the method returns.
-     * <p>
-     * Instead a {@link org.osgi.framework.ServiceListener} for {@link SlingRepository} may be
+     *
+     * <p>Instead a {@link org.osgi.framework.ServiceListener} for {@link SlingRepository} may be
      * registered to get informed about its successful registration.
      *
-     * @param bundleContext The {@code BundleContext} to register the repository
-     *            service (and optionally more services required to operate the
-     *            repository)
-     * @param defaultWorkspace The name of the default workspace to use to
-     *            login. This may be {@code null} to have the actual repository
-     *            instance define its own default
-     * @param disableLoginAdministrative Whether to disable the
-     *            {@code SlingRepository.loginAdministrative} method or not.
-     * @return {@code true} if the repository has been started and the service
-     *         is registered; {@code false} if the service has not been registered,
-     *         which may indicate that startup was unsuccessful OR that it is happening
-     *         asynchronously. A more reliable way to determin availability of the
-     *         {@link SlingRepository} as a service is using a
-     *         {@link org.osgi.framework.ServiceListener}.
+     * @param bundleContext The {@code BundleContext} to register the repository service (and
+     *     optionally more services required to operate the repository)
+     * @param defaultWorkspace The name of the default workspace to use to login. This may be {@code
+     *     null} to have the actual repository instance define its own default
+     * @param disableLoginAdministrative Whether to disable the {@code
+     *     SlingRepository.loginAdministrative} method or not.
+     * @return {@code true} if the repository has been started and the service is registered; {@code
+     *     false} if the service has not been registered, which may indicate that startup was
+     *     unsuccessful OR that it is happening asynchronously. A more reliable way to determin
+     *     availability of the {@link SlingRepository} as a service is using a {@link
+     *     org.osgi.framework.ServiceListener}.
      * @deprecated use {@link #start(BundleContext, AbstractSlingRepositoryManager.Config)} instead.
      */
     @Deprecated
-    protected final boolean start(final BundleContext bundleContext, final String defaultWorkspace,
-                                  final boolean disableLoginAdministrative) {
+    protected final boolean start(
+            final BundleContext bundleContext,
+            final String defaultWorkspace,
+            final boolean disableLoginAdministrative) {
         start(bundleContext, new Config(defaultWorkspace, disableLoginAdministrative));
         long end = System.currentTimeMillis() + 5000; // wait up to 5 seconds for repository registration
         while (!isRepositoryServiceRegistered() && end > System.currentTimeMillis()) {
@@ -398,47 +388,42 @@ public abstract class AbstractSlingRepositoryManager {
         return isRepositoryServiceRegistered();
     }
 
-    /**
-     * Configuration pojo to be passed to the {@link #start(BundleContext, Config)} method.
-     */
+    /** Configuration pojo to be passed to the {@link #start(BundleContext, Config)} method. */
     protected static final class Config {
 
         protected final String defaultWorkspace;
 
         protected final boolean disableLoginAdministrative;
-        
+
         protected final int startupThreadMaxWaitCount;
-        
+
         protected final long startupThreadWaitMillis;
 
         /**
-         * @param defaultWorkspace The name of the default workspace to use to
-         *            login. This may be {@code null} to have the actual repository
-         *            instance define its own default
-         *
-         * @param disableLoginAdministrative Whether to disable the
-         *            {@code SlingRepository.loginAdministrative} method or not.
+         * @param defaultWorkspace The name of the default workspace to use to login. This may be {@code
+         *     null} to have the actual repository instance define its own default
+         * @param disableLoginAdministrative Whether to disable the {@code
+         *     SlingRepository.loginAdministrative} method or not.
          */
         public Config(String defaultWorkspace, boolean disableLoginAdministrative) {
             this(defaultWorkspace, disableLoginAdministrative, 5, TimeUnit.MINUTES.toMillis(1));
         }
 
         /**
-         * @param defaultWorkspace The name of the default workspace to use to
-         *            login. This may be {@code null} to have the actual repository
-         *            instance define its own default
-         *
-         * @param disableLoginAdministrative Whether to disable the
-         *            {@code SlingRepository.loginAdministrative} method or not.
-         *            
-         * @param startupThreadMaxWaitCount The number of attempts to be performed
-         *            when waiting for the repository startup to complete
-         *            
-         * @param startupThreadWaitMillis The duration of each of the waits performed
-         *            when waiting for the repository startup to complete
+         * @param defaultWorkspace The name of the default workspace to use to login. This may be {@code
+         *     null} to have the actual repository instance define its own default
+         * @param disableLoginAdministrative Whether to disable the {@code
+         *     SlingRepository.loginAdministrative} method or not.
+         * @param startupThreadMaxWaitCount The number of attempts to be performed when waiting for the
+         *     repository startup to complete
+         * @param startupThreadWaitMillis The duration of each of the waits performed when waiting for
+         *     the repository startup to complete
          */
-        public Config(String defaultWorkspace, boolean disableLoginAdministrative, 
-                int startupThreadMaxWaitCount, long startupThreadWaitMillis) {
+        public Config(
+                String defaultWorkspace,
+                boolean disableLoginAdministrative,
+                int startupThreadMaxWaitCount,
+                long startupThreadWaitMillis) {
             this.defaultWorkspace = defaultWorkspace;
             this.disableLoginAdministrative = disableLoginAdministrative;
             this.startupThreadMaxWaitCount = startupThreadMaxWaitCount;
@@ -447,15 +432,14 @@ public abstract class AbstractSlingRepositoryManager {
     }
 
     /**
-     * This method actually starts the backing repository instannce and
-     * registeres the repository service.
-     * <p>
-     * Multiple subsequent calls to this method without calling {@link #stop()}
-     * first have no effect.
+     * This method actually starts the backing repository instannce and registeres the repository
+     * service.
      *
-     * @param bundleContext The {@code BundleContext} to register the repository
-     *            service (and optionally more services required to operate the
-     *            repository)
+     * <p>Multiple subsequent calls to this method without calling {@link #stop()} first have no
+     * effect.
+     *
+     * @param bundleContext The {@code BundleContext} to register the repository service (and
+     *     optionally more services required to operate the repository)
      * @param config The configuration to apply to this instance.
      */
     protected final void start(final BundleContext bundleContext, final Config config) {
@@ -475,16 +459,20 @@ public abstract class AbstractSlingRepositoryManager {
         this.mountTracker = new ServiceTracker<>(this.bundleContext, RepositoryMount.class, null);
         this.mountTracker.open();
 
-        this.repoInitializerTracker = new ServiceTracker<SlingRepositoryInitializer, SlingRepositoryInitializerInfo>(bundleContext, SlingRepositoryInitializer.class,
+        this.repoInitializerTracker = new ServiceTracker<SlingRepositoryInitializer, SlingRepositoryInitializerInfo>(
+                bundleContext,
+                SlingRepositoryInitializer.class,
                 new ServiceTrackerCustomizer<SlingRepositoryInitializer, SlingRepositoryInitializerInfo>() {
 
                     @Override
-                    public SlingRepositoryInitializerInfo addingService(final ServiceReference<SlingRepositoryInitializer> reference) {
+                    public SlingRepositoryInitializerInfo addingService(
+                            final ServiceReference<SlingRepositoryInitializer> reference) {
                         final SlingRepositoryInitializer service = bundleContext.getService(reference);
-                        if ( service != null ) {
-                            final SlingRepositoryInitializerInfo info = new SlingRepositoryInitializerInfo(service, reference);
-                            synchronized ( repoInitLock ) {
-                                if ( masterSlingRepository != null ) {
+                        if (service != null) {
+                            final SlingRepositoryInitializerInfo info =
+                                    new SlingRepositoryInitializerInfo(service, reference);
+                            synchronized (repoInitLock) {
+                                if (masterSlingRepository != null) {
                                     log.debug("Executing {}", info.initializer);
                                     try {
                                         info.initializer.processRepository(masterSlingRepository);
@@ -499,18 +487,19 @@ public abstract class AbstractSlingRepositoryManager {
                     }
 
                     @Override
-                    public void modifiedService(final ServiceReference<SlingRepositoryInitializer> reference,
+                    public void modifiedService(
+                            final ServiceReference<SlingRepositoryInitializer> reference,
                             final SlingRepositoryInitializerInfo service) {
                         // nothing to do
                     }
 
                     @Override
-                    public void removedService(final ServiceReference<SlingRepositoryInitializer> reference,
+                    public void removedService(
+                            final ServiceReference<SlingRepositoryInitializer> reference,
                             final SlingRepositoryInitializerInfo service) {
                         bundleContext.ungetService(reference);
                     }
-
-        });
+                });
         this.repoInitializerTracker.open();
 
         // If allowLoginAdministrativeForBundle is overridden we assume we don't need
@@ -520,16 +509,19 @@ public abstract class AbstractSlingRepositoryManager {
         boolean enableAllowlist = !isAllowLoginAdministrativeForBundleOverridden();
         final CountDownLatch waitForAllowList = new CountDownLatch(enableAllowlist ? 1 : 0);
         if (enableAllowlist) {
-            allowListTracker = new ServiceTracker<LoginAdminAllowList, LoginAdminAllowList>(bundleContext, LoginAdminAllowList.class, null) {
-                @Override
-                public LoginAdminAllowList addingService(final ServiceReference<LoginAdminAllowList> reference) {
-                    try {
-                        return super.addingService(reference);
-                    } finally {
-                        waitForAllowList.countDown();
-                    }
-                }
-            };
+            allowListTracker =
+                    new ServiceTracker<LoginAdminAllowList, LoginAdminAllowList>(
+                            bundleContext, LoginAdminAllowList.class, null) {
+                        @Override
+                        public LoginAdminAllowList addingService(
+                                final ServiceReference<LoginAdminAllowList> reference) {
+                            try {
+                                return super.addingService(reference);
+                            } finally {
+                                waitForAllowList.countDown();
+                            }
+                        }
+                    };
             allowListTracker.open();
         }
 
@@ -543,7 +535,12 @@ public abstract class AbstractSlingRepositoryManager {
                     waitForAllowList.await();
                     initializeAndRegisterRepositoryService();
                 } catch (InterruptedException e) {
-                    log.warn("Interrupted while waiting for the {} service, cancelling repository initialisation. {}", LoginAdminAllowList.class.getSimpleName(), INTERRUPTED_EXCEPTION_NOTE, e);
+                    log.warn(
+                            "Interrupted while waiting for the {} service, cancelling repository"
+                                    + " initialisation. {}",
+                            LoginAdminAllowList.class.getSimpleName(),
+                            INTERRUPTED_EXCEPTION_NOTE,
+                            e);
                     Thread.currentThread().interrupt();
                 }
             }
@@ -564,7 +561,7 @@ public abstract class AbstractSlingRepositoryManager {
                 // ensure we really have the repository
                 log.debug("start: got a Repository");
                 this.repository = newRepo;
-                synchronized ( this.repoInitLock ) {
+                synchronized (this.repoInitLock) {
                     this.masterSlingRepository = this.create(this.bundleContext.getBundle());
 
                     log.debug("start: setting up Loader");
@@ -573,8 +570,11 @@ public abstract class AbstractSlingRepositoryManager {
                     log.debug("start: calling SlingRepositoryInitializer");
                     try {
                         executeRepositoryInitializers(this.masterSlingRepository);
-                    } catch(Throwable e) {
-                        stoppingOnError("Exception in a SlingRepositoryInitializer, SlingRepository service registration aborted", e);
+                    } catch (Throwable e) {
+                        stoppingOnError(
+                                "Exception in a SlingRepositoryInitializer, SlingRepository service registration"
+                                        + " aborted",
+                                e);
                         stop();
                         return;
                     }
@@ -606,7 +606,7 @@ public abstract class AbstractSlingRepositoryManager {
             final Method[] declaredMethods = clazz.getDeclaredMethods();
             for (final Method method : declaredMethods) {
                 if (method.getName().equals("allowLoginAdministrativeForBundle")
-                        && Arrays.equals(method.getParameterTypes(), new Class<?>[]{Bundle.class})) {
+                        && Arrays.equals(method.getParameterTypes(), new Class<?>[] {Bundle.class})) {
                     return true;
                 }
             }
@@ -616,13 +616,14 @@ public abstract class AbstractSlingRepositoryManager {
     }
 
     private void executeRepositoryInitializers(final SlingRepository repo) throws Exception {
-        final SlingRepositoryInitializerInfo [] infos = repoInitializerTracker.getServices(new SlingRepositoryInitializerInfo[0]);
+        final SlingRepositoryInitializerInfo[] infos =
+                repoInitializerTracker.getServices(new SlingRepositoryInitializerInfo[0]);
         if (infos == null || infos.length == 0) {
             log.debug("No SlingRepositoryInitializer services found");
             return;
         }
         Arrays.sort(infos);
-        for(final SlingRepositoryInitializerInfo info : infos) {
+        for (final SlingRepositoryInitializerInfo info : infos) {
             log.debug("Executing {}", info.initializer);
             info.initializer.processRepository(repo);
         }
@@ -630,7 +631,7 @@ public abstract class AbstractSlingRepositoryManager {
 
     protected final void stop() {
         log.info("Stop requested");
-        if ( startupThread != null && startupThread != Thread.currentThread() ) {
+        if (startupThread != null && startupThread != Thread.currentThread()) {
             waitForStartupThreadToComplete();
             startupThread = null;
         }
@@ -649,7 +650,8 @@ public abstract class AbstractSlingRepositoryManager {
                 try {
                     if (isRepositoryServiceRegistered()) {
                         try {
-                            log.debug("stop: Unregistering SlingRepository service, registration={}", repositoryService);
+                            log.debug(
+                                    "stop: Unregistering SlingRepository service, registration={}", repositoryService);
                             unregisterService(repositoryService);
                         } catch (Throwable t) {
                             log.info("stop: Uncaught problem unregistering the repository service", t);
@@ -670,7 +672,8 @@ public abstract class AbstractSlingRepositoryManager {
                         this.destroy(this.masterSlingRepository);
 
                         try {
-                            disposeRepository(oldRepo instanceof  ProxyRepository ? ((ProxyRepository<?>) oldRepo).jcr : oldRepo);
+                            disposeRepository(
+                                    oldRepo instanceof ProxyRepository ? ((ProxyRepository<?>) oldRepo).jcr : oldRepo);
                         } catch (Throwable t) {
                             log.info("stop: Uncaught problem disposing the repository", t);
                         }
@@ -681,7 +684,7 @@ public abstract class AbstractSlingRepositoryManager {
             }
         }
 
-        if(repoInitializerTracker != null) {
+        if (repoInitializerTracker != null) {
             repoInitializerTracker.close();
             repoInitializerTracker = null;
         }
@@ -701,24 +704,36 @@ public abstract class AbstractSlingRepositoryManager {
         try {
             // Oak does play well with interrupted exceptions, so avoid that at all costs
             // https://jackrabbit.apache.org/oak/docs/dos_and_donts.html
-            for ( int i = 0; i < startupThreadMaxWaitCount; i++ ) {
-                log.info("Waiting {} millis for {} to complete, attempt {}/{}.", startupThreadWaitMillis, startupThread.getName(), (i + 1), startupThreadMaxWaitCount);
+            for (int i = 0; i < startupThreadMaxWaitCount; i++) {
+                log.info(
+                        "Waiting {} millis for {} to complete, attempt {}/{}.",
+                        startupThreadWaitMillis,
+                        startupThread.getName(),
+                        (i + 1),
+                        startupThreadMaxWaitCount);
                 startupThread.join(startupThreadWaitMillis);
-                if ( !startupThread.isAlive() ) {
+                if (!startupThread.isAlive()) {
                     log.info("{} not alive, proceeding", startupThread.getName());
                     break;
                 }
             }
         } catch (InterruptedException e) {
-            log.warn("Interrupted while waiting for the {} to complete. {}", startupThread.getName(), INTERRUPTED_EXCEPTION_NOTE, e);
+            log.warn(
+                    "Interrupted while waiting for the {} to complete. {}",
+                    startupThread.getName(),
+                    INTERRUPTED_EXCEPTION_NOTE,
+                    e);
             Thread.currentThread().interrupt();
         }
-        
-        if ( startupThread.isAlive() ) {
+
+        if (startupThread.isAlive()) {
             log.warn("Proceeding even though {} is still running, behaviour is undefined.", startupThread.getName());
-            if ( log.isInfoEnabled() ) {
+            if (log.isInfoEnabled()) {
                 StringBuilder stackTrace = new StringBuilder();
-                stackTrace.append("Stack trace for ").append(startupThread.getName()).append(" :\n");
+                stackTrace
+                        .append("Stack trace for ")
+                        .append(startupThread.getName())
+                        .append(" :\n");
                 for (StackTraceElement traceElement : startupThread.getStackTrace())
                     stackTrace.append("\tat ").append(traceElement).append('\n');
                 log.info(stackTrace.toString());
@@ -731,7 +746,8 @@ public abstract class AbstractSlingRepositoryManager {
         final SlingRepositoryInitializer initializer;
         final ServiceReference<SlingRepositoryInitializer> ref;
 
-        SlingRepositoryInitializerInfo(final SlingRepositoryInitializer init, ServiceReference<SlingRepositoryInitializer> ref) {
+        SlingRepositoryInitializerInfo(
+                final SlingRepositoryInitializer init, ServiceReference<SlingRepositoryInitializer> ref) {
             this.initializer = init;
             this.ref = ref;
         }

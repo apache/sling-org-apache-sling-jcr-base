@@ -18,6 +18,10 @@
  */
 package org.apache.sling.jcr.base.internal;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
@@ -25,29 +29,21 @@ import org.osgi.service.metatype.annotations.AttributeDefinition;
 import org.osgi.service.metatype.annotations.Designate;
 import org.osgi.service.metatype.annotations.ObjectClassDefinition;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 import static java.util.Arrays.asList;
 
 @ObjectClassDefinition(
         name = "Apache Sling Login Admin Allow List Configuration Fragment",
-        description = "This list of Bundle Symbolic Names is added to the list of bundles which are allowed " +
-            "to use Administrative Login. The full list is built in a modular way out of all such configuration fragments."
-)
+        description = "This list of Bundle Symbolic Names is added to the list of bundles which are allowed to"
+                + " use Administrative Login. The full list is built in a modular way out of all such"
+                + " configuration fragments.")
 @interface Configuration {
 
-    @AttributeDefinition(
-            name = "Name",
-            description = "Optional name to disambiguate configurations."
-    )
+    @AttributeDefinition(name = "Name", description = "Optional name to disambiguate configurations.")
     String allowlist_name() default "[unnamed]";
 
     @AttributeDefinition(
             name = "Allow listed BSNs",
-            description = "A list of bundle symbolic names allowed to use loginAdministrative()."
-    )
+            description = "A list of bundle symbolic names allowed to use loginAdministrative().")
     String[] allowlist_bundles();
 
     @SuppressWarnings({"unused", "java:S100"})
@@ -57,8 +53,7 @@ import static java.util.Arrays.asList;
 @Component(
         configurationPid = AllowListFragment.FACTORY_PID,
         configurationPolicy = ConfigurationPolicy.REQUIRE,
-        service = AllowListFragment.class
-)
+        service = AllowListFragment.class)
 @Designate(ocd = Configuration.class, factory = true)
 public class AllowListFragment {
 
@@ -70,6 +65,7 @@ public class AllowListFragment {
 
     /**
      * Constructor for SCR
+     *
      * @param config Configuration
      */
     @Activate
@@ -102,8 +98,7 @@ public class AllowListFragment {
             return false;
         }
         final AllowListFragment that = (AllowListFragment) o;
-        return name.equals(that.name)
-                && bundles.equals(that.bundles);
+        return name.equals(that.name) && bundles.equals(that.bundles);
     }
 
     @Override

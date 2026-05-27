@@ -26,17 +26,20 @@ import org.apache.jackrabbit.api.security.authorization.PrivilegeManager;
 import org.xml.sax.InputSource;
 
 public class ProxyJackrabbitWorkspace extends ProxyWorkspace<JackrabbitWorkspace> implements JackrabbitWorkspace {
-    public ProxyJackrabbitWorkspace(ProxySession mountSession, JackrabbitWorkspace delegate, JackrabbitWorkspace delegate2) {
+    public ProxyJackrabbitWorkspace(
+            ProxySession mountSession, JackrabbitWorkspace delegate, JackrabbitWorkspace delegate2) {
         super(mountSession, delegate, delegate2);
     }
 
     @Override
-    public void createWorkspace(String workspaceName, InputSource workspaceTemplate) throws AccessDeniedException, RepositoryException {
+    public void createWorkspace(String workspaceName, InputSource workspaceTemplate)
+            throws AccessDeniedException, RepositoryException {
         this.delegate.createWorkspace(workspaceName, workspaceTemplate);
     }
 
     @Override
     public PrivilegeManager getPrivilegeManager() throws RepositoryException {
-        return new ProxyPrivilegeManager(mountSession, this.delegate.getPrivilegeManager(), this.delegate2.getPrivilegeManager());
+        return new ProxyPrivilegeManager(
+                mountSession, this.delegate.getPrivilegeManager(), this.delegate2.getPrivilegeManager());
     }
 }

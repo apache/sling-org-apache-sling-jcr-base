@@ -18,10 +18,6 @@
  */
 package org.apache.sling.jcr.base.internal.mount;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-
 import javax.jcr.ItemExistsException;
 import javax.jcr.ItemNotFoundException;
 import javax.jcr.Node;
@@ -38,6 +34,10 @@ import javax.jcr.query.QueryResult;
 import javax.jcr.query.Row;
 import javax.jcr.query.RowIterator;
 import javax.jcr.version.VersionException;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class ProxyQuery extends ProxyWrapper<Query> implements Query {
     private final Query delegate2;
@@ -58,119 +58,121 @@ public class ProxyQuery extends ProxyWrapper<Query> implements Query {
         return this.mountSession.wrap(new QueryResult() {
             @Override
             public String[] getColumnNames() throws RepositoryException {
-            	return result1.getColumnNames();
+                return result1.getColumnNames();
             }
 
             @Override
             public RowIterator getRows() throws RepositoryException {
-            	final RowIterator i1 = result1.getRows();
-            	RowIterator i2 = null;
-            	if (result2 != null) {
+                final RowIterator i1 = result1.getRows();
+                RowIterator i2 = null;
+                if (result2 != null) {
                     i2 = result2.getRows();
                 }
-            	if ( i2 == null || !i2.hasNext() ) {
-            		return i1;
-            	}
-            	if ( !i1.hasNext() ) {
-            		return i2;
-            	}
+                if (i2 == null || !i2.hasNext()) {
+                    return i1;
+                }
+                if (!i1.hasNext()) {
+                    return i2;
+                }
                 final List<RowIterator> list = new ArrayList<>();
                 list.add(i1);
                 list.add(i2);
-                @SuppressWarnings({ "unchecked", "rawtypes" })
-				final Iterator<Row> iter = new ChainedIterator(list.iterator());
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                final Iterator<Row> iter = new ChainedIterator(list.iterator());
                 return new RowIterator() {
-					private volatile long position = 0;
-					@Override
-					public Object next() {
-					    position++;
-					    return iter.next();
-					}
+                    private volatile long position = 0;
 
-					@Override
-					public boolean hasNext() {
-						return iter.hasNext();
-					}
+                    @Override
+                    public Object next() {
+                        position++;
+                        return iter.next();
+                    }
 
-					@Override
-					public void skip(long skipNum) {
-						while (skipNum-- > 0) {
-						    next();
-						}
-					}
+                    @Override
+                    public boolean hasNext() {
+                        return iter.hasNext();
+                    }
 
-					@Override
-					public long getSize() {
-						return -1;
-					}
+                    @Override
+                    public void skip(long skipNum) {
+                        while (skipNum-- > 0) {
+                            next();
+                        }
+                    }
 
-					@Override
-					public long getPosition() {
-						return position;
-					}
+                    @Override
+                    public long getSize() {
+                        return -1;
+                    }
 
-					@Override
-					public Row nextRow() {
-						position++;
-						return iter.next();
-					}
-				};
+                    @Override
+                    public long getPosition() {
+                        return position;
+                    }
+
+                    @Override
+                    public Row nextRow() {
+                        position++;
+                        return iter.next();
+                    }
+                };
             }
 
             @Override
             public NodeIterator getNodes() throws RepositoryException {
-            	final NodeIterator i1 = result1.getNodes();
+                final NodeIterator i1 = result1.getNodes();
                 NodeIterator i2 = null;
                 if (result2 != null) {
                     i2 = result2.getNodes();
                 }
-            	if ( i2 == null || !i2.hasNext() ) {
-            		return i1;
-            	}
-            	if ( !i1.hasNext() ) {
-            		return i2;
-            	}
+                if (i2 == null || !i2.hasNext()) {
+                    return i1;
+                }
+                if (!i1.hasNext()) {
+                    return i2;
+                }
                 final List<NodeIterator> list = new ArrayList<>();
                 list.add(i1);
                 list.add(i2);
-                @SuppressWarnings({ "unchecked", "rawtypes" })
-				final Iterator<Node> iter = new ChainedIterator(list.iterator());
+                @SuppressWarnings({"unchecked", "rawtypes"})
+                final Iterator<Node> iter = new ChainedIterator(list.iterator());
                 return new NodeIterator() {
-					private volatile long position = 0;
-					@Override
-					public Object next() {
-					    position++;
-					    return iter.next();
-					}
+                    private volatile long position = 0;
 
-					@Override
-					public boolean hasNext() {
-						return iter.hasNext();
-					}
+                    @Override
+                    public Object next() {
+                        position++;
+                        return iter.next();
+                    }
 
-					@Override
-					public void skip(long skipNum) {
-						while (skipNum-- > 0) {
-						    next();
-						}
-					}
+                    @Override
+                    public boolean hasNext() {
+                        return iter.hasNext();
+                    }
 
-					@Override
-					public long getSize() {
-						return -1;
-					}
+                    @Override
+                    public void skip(long skipNum) {
+                        while (skipNum-- > 0) {
+                            next();
+                        }
+                    }
 
-					@Override
-					public long getPosition() {
-						return position;
-					}
+                    @Override
+                    public long getSize() {
+                        return -1;
+                    }
 
-					@Override
-					public Node nextNode() {
-					    position++;
-					    return iter.next();
-					}
-				};
+                    @Override
+                    public long getPosition() {
+                        return position;
+                    }
+
+                    @Override
+                    public Node nextNode() {
+                        position++;
+                        return iter.next();
+                    }
+                };
             }
 
             @Override
@@ -206,7 +208,7 @@ public class ProxyQuery extends ProxyWrapper<Query> implements Query {
         try {
             return delegate.getStoredQueryPath();
         } catch (ItemNotFoundException ex) {
-           try {
+            try {
                 if (delegate2 != null) {
                     return delegate2.getStoredQueryPath();
                 } else {
@@ -218,8 +220,11 @@ public class ProxyQuery extends ProxyWrapper<Query> implements Query {
         }
     }
 
-    public Node storeAsNode(String absPath) throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException, LockException, UnsupportedRepositoryOperationException, RepositoryException {
-        return this.mountSession.wrap(this.mountSession.isMount(absPath) ? delegate2.storeAsNode(absPath) : delegate.storeAsNode(absPath));
+    public Node storeAsNode(String absPath)
+            throws ItemExistsException, PathNotFoundException, VersionException, ConstraintViolationException,
+                    LockException, UnsupportedRepositoryOperationException, RepositoryException {
+        return this.mountSession.wrap(
+                this.mountSession.isMount(absPath) ? delegate2.storeAsNode(absPath) : delegate.storeAsNode(absPath));
     }
 
     public void bindValue(String varName, Value value) throws IllegalArgumentException, RepositoryException {
