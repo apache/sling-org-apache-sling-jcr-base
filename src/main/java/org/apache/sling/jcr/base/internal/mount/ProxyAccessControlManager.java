@@ -29,7 +29,8 @@ import javax.jcr.security.AccessControlPolicyIterator;
 import javax.jcr.security.Privilege;
 import javax.jcr.version.VersionException;
 
-public class ProxyAccessControlManager<T extends AccessControlManager> extends ProxyWrapper<T> implements AccessControlManager {
+public class ProxyAccessControlManager<T extends AccessControlManager> extends ProxyWrapper<T>
+        implements AccessControlManager {
     final T mount;
 
     public ProxyAccessControlManager(ProxySession<?> mountSession, T delegate, T mount) {
@@ -52,7 +53,8 @@ public class ProxyAccessControlManager<T extends AccessControlManager> extends P
         }
     }
 
-    public boolean hasPrivileges(String absPath, Privilege[] privileges) throws PathNotFoundException, RepositoryException {
+    public boolean hasPrivileges(String absPath, Privilege[] privileges)
+            throws PathNotFoundException, RepositoryException {
         if (mountSession.isMount(absPath)) {
             return mount.hasPrivileges(absPath, privileges);
         }
@@ -66,28 +68,33 @@ public class ProxyAccessControlManager<T extends AccessControlManager> extends P
         return delegate.getPrivileges(absPath);
     }
 
-    public AccessControlPolicy[] getPolicies(String absPath) throws PathNotFoundException, AccessDeniedException, RepositoryException {
+    public AccessControlPolicy[] getPolicies(String absPath)
+            throws PathNotFoundException, AccessDeniedException, RepositoryException {
         if (mountSession.isMount(absPath)) {
             return mount.getPolicies(absPath);
         }
         return delegate.getPolicies(absPath);
     }
 
-    public AccessControlPolicy[] getEffectivePolicies(String absPath) throws PathNotFoundException, AccessDeniedException, RepositoryException {
+    public AccessControlPolicy[] getEffectivePolicies(String absPath)
+            throws PathNotFoundException, AccessDeniedException, RepositoryException {
         if (mountSession.isMount(absPath)) {
             return mount.getEffectivePolicies(absPath);
         }
         return delegate.getEffectivePolicies(absPath);
     }
 
-    public AccessControlPolicyIterator getApplicablePolicies(String absPath) throws PathNotFoundException, AccessDeniedException, RepositoryException {
+    public AccessControlPolicyIterator getApplicablePolicies(String absPath)
+            throws PathNotFoundException, AccessDeniedException, RepositoryException {
         if (mountSession.isMount(absPath)) {
             return mount.getApplicablePolicies(absPath);
         }
         return delegate.getApplicablePolicies(absPath);
     }
 
-    public void setPolicy(String absPath, AccessControlPolicy policy) throws PathNotFoundException, AccessControlException, AccessDeniedException, LockException, VersionException, RepositoryException {
+    public void setPolicy(String absPath, AccessControlPolicy policy)
+            throws PathNotFoundException, AccessControlException, AccessDeniedException, LockException,
+                    VersionException, RepositoryException {
         if (mountSession.isMountParent(absPath) || mountSession.isMount(absPath)) {
             mount.setPolicy(absPath, policy);
         }
@@ -96,7 +103,9 @@ public class ProxyAccessControlManager<T extends AccessControlManager> extends P
         }
     }
 
-    public void removePolicy(String absPath, AccessControlPolicy policy) throws PathNotFoundException, AccessControlException, AccessDeniedException, LockException, VersionException, RepositoryException {
+    public void removePolicy(String absPath, AccessControlPolicy policy)
+            throws PathNotFoundException, AccessControlException, AccessDeniedException, LockException,
+                    VersionException, RepositoryException {
         if (mountSession.isMountParent(absPath) || mountSession.isMount(absPath)) {
             mount.removePolicy(absPath, policy);
         }

@@ -23,7 +23,7 @@
     <parent>
         <groupId>org.apache.sling</groupId>
         <artifactId>sling-bundle-parent</artifactId>
-        <version>52</version>
+        <version>66</version>
         <relativePath />
     </parent>
 
@@ -31,30 +31,18 @@
     <version>3.2.1-SNAPSHOT</version>
 
     <name>Apache Sling JCR Base</name>
-    <description>
-		The JCR base bundle provides JCR utility classes
-    </description>
+    <description>The JCR base bundle provides JCR utility classes</description>
 
     <scm>
         <connection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-jcr-base.git</connection>
         <developerConnection>scm:git:https://gitbox.apache.org/repos/asf/sling-org-apache-sling-jcr-base.git</developerConnection>
+        <tag>HEAD</tag>
         <url>https://github.com/apache/sling-org-apache-sling-jcr-base.git</url>
-    <tag>HEAD</tag>
-  </scm>
+    </scm>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <excludePackageNames>
-                        org.apache.sling.jcr.base.internal
-                    </excludePackageNames>
-                </configuration>
-	        </plugin>
-        </plugins>
-    </build>
+    <properties>
+        <sling.java.version>8</sling.java.version>
+    </properties>
 
     <dependencies>
         <dependency>
@@ -175,5 +163,17 @@
             <scope>test</scope>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <excludePackageNames>org.apache.sling.jcr.base.internal</excludePackageNames>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

@@ -66,45 +66,55 @@ public class ProxyNodeTypeManager implements NodeTypeManager {
     }
 
     @Override
-    public NodeTypeTemplate createNodeTypeTemplate() throws UnsupportedRepositoryOperationException, RepositoryException {
+    public NodeTypeTemplate createNodeTypeTemplate()
+            throws UnsupportedRepositoryOperationException, RepositoryException {
         return nodeTypeManager.createNodeTypeTemplate();
     }
 
     @Override
-    public NodeTypeTemplate createNodeTypeTemplate(NodeTypeDefinition ntd) throws UnsupportedRepositoryOperationException, RepositoryException {
+    public NodeTypeTemplate createNodeTypeTemplate(NodeTypeDefinition ntd)
+            throws UnsupportedRepositoryOperationException, RepositoryException {
         return nodeTypeManager.createNodeTypeTemplate(ntd);
     }
 
     @Override
-    public NodeDefinitionTemplate createNodeDefinitionTemplate() throws UnsupportedRepositoryOperationException, RepositoryException {
+    public NodeDefinitionTemplate createNodeDefinitionTemplate()
+            throws UnsupportedRepositoryOperationException, RepositoryException {
         return nodeTypeManager.createNodeDefinitionTemplate();
     }
 
     @Override
-    public PropertyDefinitionTemplate createPropertyDefinitionTemplate() throws UnsupportedRepositoryOperationException, RepositoryException {
+    public PropertyDefinitionTemplate createPropertyDefinitionTemplate()
+            throws UnsupportedRepositoryOperationException, RepositoryException {
         return nodeTypeManager.createPropertyDefinitionTemplate();
     }
 
     @Override
-    public NodeType registerNodeType(NodeTypeDefinition ntd, boolean allowUpdate) throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException, RepositoryException {
+    public NodeType registerNodeType(NodeTypeDefinition ntd, boolean allowUpdate)
+            throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
+                    RepositoryException {
         nodeTypeManager1.registerNodeType(ntd, allowUpdate);
         return nodeTypeManager.registerNodeType(ntd, allowUpdate);
     }
 
     @Override
-    public NodeTypeIterator registerNodeTypes(NodeTypeDefinition[] ntds, boolean allowUpdate) throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException, RepositoryException {
+    public NodeTypeIterator registerNodeTypes(NodeTypeDefinition[] ntds, boolean allowUpdate)
+            throws InvalidNodeTypeDefinitionException, NodeTypeExistsException, UnsupportedRepositoryOperationException,
+                    RepositoryException {
         nodeTypeManager1.registerNodeTypes(ntds, allowUpdate);
         return nodeTypeManager.registerNodeTypes(ntds, allowUpdate);
     }
 
     @Override
-    public void unregisterNodeType(String name) throws UnsupportedRepositoryOperationException, NoSuchNodeTypeException, RepositoryException {
+    public void unregisterNodeType(String name)
+            throws UnsupportedRepositoryOperationException, NoSuchNodeTypeException, RepositoryException {
         nodeTypeManager.unregisterNodeType(name);
         nodeTypeManager1.unregisterNodeType(name);
     }
 
     @Override
-    public void unregisterNodeTypes(String[] names) throws UnsupportedRepositoryOperationException, NoSuchNodeTypeException, RepositoryException {
+    public void unregisterNodeTypes(String[] names)
+            throws UnsupportedRepositoryOperationException, NoSuchNodeTypeException, RepositoryException {
         nodeTypeManager.unregisterNodeTypes(names);
         nodeTypeManager1.unregisterNodeTypes(names);
     }

@@ -18,10 +18,6 @@
  */
 package org.apache.sling.jcr.base.util;
 
-import org.osgi.service.cm.ConfigurationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -31,6 +27,10 @@ import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
+import org.osgi.service.cm.ConfigurationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /** TODO move this to a testing utilities module? */
 public class ConfigAnnotationUtil {
 
@@ -39,8 +39,8 @@ public class ConfigAnnotationUtil {
     @SuppressWarnings("unchecked")
     public static <T> T fromDictionary(final Class<T> clazz, final Dictionary<String, ?> properties)
             throws ConfigurationException {
-        return (T)Proxy.newProxyInstance(clazz.getClassLoader(), new Class[]{ clazz },
-                new Handler(copyAndVerify(properties, clazz)));
+        return (T) Proxy.newProxyInstance(
+                clazz.getClassLoader(), new Class[] {clazz}, new Handler(copyAndVerify(properties, clazz)));
     }
 
     private static class Handler implements InvocationHandler {
@@ -101,7 +101,8 @@ public class ConfigAnnotationUtil {
             final Class<?> valueClass = value.getClass();
             if (!isAssignable(returnType, valueClass)) {
                 LOG.error("Invalid value type for {} ({} instead of {})", propertyName, valueClass, returnType);
-                throw new ConfigurationException(propertyName,
+                throw new ConfigurationException(
+                        propertyName,
                         "Value of incorrect type " + valueClass.getName() + " instead of " + returnType.getName());
             }
         }
@@ -134,6 +135,7 @@ public class ConfigAnnotationUtil {
     }
 
     private static final Map<Class<?>, Class<?>> primitiveToWrapper = new HashMap<Class<?>, Class<?>>();
+
     static {
         primitiveToWrapper.put(Boolean.TYPE, Boolean.class);
         primitiveToWrapper.put(Byte.TYPE, Byte.class);

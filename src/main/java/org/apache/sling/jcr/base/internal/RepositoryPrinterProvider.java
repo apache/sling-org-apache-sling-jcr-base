@@ -18,12 +18,12 @@
  */
 package org.apache.sling.jcr.base.internal;
 
+import javax.jcr.Repository;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.jcr.Repository;
 
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
@@ -36,15 +36,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The repository provider listens for javax.jcr.Repository services and
- * registers a web console plugin
+ * The repository provider listens for javax.jcr.Repository services and registers a web console
+ * plugin
  */
 @Component(
         property = {
-                Constants.SERVICE_DESCRIPTION + "=Apache Sling Repository Printer",
-                Constants.SERVICE_VENDOR + "=The Apache Software Foundation"
-        }
-)
+            Constants.SERVICE_DESCRIPTION + "=Apache Sling Repository Printer",
+            Constants.SERVICE_VENDOR + "=The Apache Software Foundation"
+        })
 public class RepositoryPrinterProvider {
 
     /** The logger. */
@@ -57,80 +56,69 @@ public class RepositoryPrinterProvider {
     /** List of services which are bound before activate is called. */
     private final List<PendingService> pendingServices = new ArrayList<PendingService>();
 
-    /**
-     * Activate this component.
-     */
+    /** Activate this component. */
     protected void activate(final BundleContext ctx) {
         final List<PendingService> copyList;
-        synchronized ( pendingServices ) {
+        synchronized (pendingServices) {
             this.bundleContext = ctx;
             copyList = new ArrayList<PendingService>(this.pendingServices);
             this.pendingServices.clear();
         }
-        for(final PendingService reg : copyList) {
+        for (final PendingService reg : copyList) {
             this.registerPrinter(this.bundleContext, reg.repository, reg.properties);
         }
     }
 
-    /**
-     * Deactivate this component.
-     */
+    /** Deactivate this component. */
     protected void deactivate() {
-        synchronized ( pendingServices ) {
+        synchronized (pendingServices) {
             this.bundleContext = null;
         }
     }
 
-    private void registerPrinter(final BundleContext processContext,
-            final Repository repo,
-            final Map<String, Object> props) {
+    private void registerPrinter(
+            final BundleContext processContext, final Repository repo, final Map<String, Object> props) {
         logger.info("Providing new configuration printer for {} : {}", repo, props);
-        final Long key = (Long)props.get(Constants.SERVICE_ID);
+        final Long key = (Long) props.get(Constants.SERVICE_ID);
         final RepositoryPrinter printer = new RepositoryPrinter(repo, props);
-        final ServiceRegistration<RepositoryPrinter> reg = processContext.registerService(RepositoryPrinter.class,
-                printer, printer.getProperties());
-        synchronized ( this.registrations ) {
+        final ServiceRegistration<RepositoryPrinter> reg =
+                processContext.registerService(RepositoryPrinter.class, printer, printer.getProperties());
+        synchronized (this.registrations) {
             this.registrations.put(key, reg);
         }
     }
 
-    /**
-     * Bind a new repository.
-     */
-    @Reference(policy=ReferencePolicy.DYNAMIC, cardinality=ReferenceCardinality.MULTIPLE)
+    /** Bind a new repository. */
+    @Reference(policy = ReferencePolicy.DYNAMIC, cardinality = ReferenceCardinality.MULTIPLE)
     protected void bindRepository(final Repository repo, final Map<String, Object> props) {
         final BundleContext processContext;
-        synchronized ( pendingServices ) {
+        synchronized (pendingServices) {
             processContext = this.bundleContext;
-            if ( processContext == null ) {
+            if (processContext == null) {
                 this.pendingServices.add(new PendingService(repo, props));
             }
         }
-        if ( processContext != null ) {
+        if (processContext != null) {
             this.registerPrinter(processContext, repo, props);
         }
     }
 
-    /**
-     * Unind a new repository.
-     */
+    /** Unind a new repository. */
     protected void unbindRepository(final Repository repo, final Map<String, Object> props) {
-        synchronized ( pendingServices ) {
+        synchronized (pendingServices) {
             this.pendingServices.remove(new PendingService(repo, props));
         }
-        final Long key = (Long)props.get(Constants.SERVICE_ID);
+        final Long key = (Long) props.get(Constants.SERVICE_ID);
         final ServiceRegistration<RepositoryPrinter> reg;
-        synchronized ( this.registrations ) {
+        synchronized (this.registrations) {
             reg = this.registrations.remove(key);
         }
-        if ( reg != null ) {
+        if (reg != null) {
             reg.unregister();
         }
     }
 
-    /**
-     * Data class for a pending service.
-     */
+    /** Data class for a pending service. */
     private static final class PendingService {
         public final Repository repository;
         public final Map<String, Object> properties;
@@ -150,13 +138,13 @@ public class RepositoryPrinterProvider {
 
         @Override
         public boolean equals(Object obj) {
-            if ( this == obj ) {
+            if (this == obj) {
                 return true;
             }
-            if ( ! (obj instanceof PendingService ) ) {
+            if (!(obj instanceof PendingService)) {
                 return false;
             }
-            return this.key == ((PendingService)obj).key;
+            return this.key == ((PendingService) obj).key;
         }
     }
 }

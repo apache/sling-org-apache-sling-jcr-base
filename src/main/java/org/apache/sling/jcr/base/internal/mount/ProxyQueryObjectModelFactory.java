@@ -55,45 +55,58 @@ import javax.jcr.query.qom.Source;
 import javax.jcr.query.qom.StaticOperand;
 import javax.jcr.query.qom.UpperCase;
 
-public class ProxyQueryObjectModelFactory extends ProxyWrapper<QueryObjectModelFactory> implements QueryObjectModelFactory {
+public class ProxyQueryObjectModelFactory extends ProxyWrapper<QueryObjectModelFactory>
+        implements QueryObjectModelFactory {
     private final QueryObjectModelFactory delegate2;
 
-    public ProxyQueryObjectModelFactory(ProxySession<?> mountSession, QueryObjectModelFactory delegate, QueryObjectModelFactory delegate2) {
+    public ProxyQueryObjectModelFactory(
+            ProxySession<?> mountSession, QueryObjectModelFactory delegate, QueryObjectModelFactory delegate2) {
         super(mountSession, delegate);
         this.delegate2 = delegate2;
     }
 
-    public QueryObjectModel createQuery(Source source, Constraint constraint, Ordering[] orderings, Column[] columns) throws InvalidQueryException, RepositoryException {
+    public QueryObjectModel createQuery(Source source, Constraint constraint, Ordering[] orderings, Column[] columns)
+            throws InvalidQueryException, RepositoryException {
         if (delegate2 != null) {
-            return new ProxyQueryObjectModel(this.mountSession, delegate.createQuery(source, constraint, orderings, columns),
+            return new ProxyQueryObjectModel(
+                    this.mountSession,
+                    delegate.createQuery(source, constraint, orderings, columns),
                     delegate2.createQuery(source, constraint, orderings, columns));
         } else {
-            return new ProxyQueryObjectModel(this.mountSession, delegate.createQuery(source, constraint, orderings, columns),
-                    null);
+            return new ProxyQueryObjectModel(
+                    this.mountSession, delegate.createQuery(source, constraint, orderings, columns), null);
         }
     }
 
-    public Selector selector(String nodeTypeName, String selectorName) throws InvalidQueryException, RepositoryException {
+    public Selector selector(String nodeTypeName, String selectorName)
+            throws InvalidQueryException, RepositoryException {
         return delegate.selector(nodeTypeName, selectorName);
     }
 
-    public Join join(Source left, Source right, String joinType, JoinCondition joinCondition) throws InvalidQueryException, RepositoryException {
+    public Join join(Source left, Source right, String joinType, JoinCondition joinCondition)
+            throws InvalidQueryException, RepositoryException {
         return delegate.join(left, right, joinType, joinCondition);
     }
 
-    public EquiJoinCondition equiJoinCondition(String selector1Name, String property1Name, String selector2Name, String property2Name) throws InvalidQueryException, RepositoryException {
+    public EquiJoinCondition equiJoinCondition(
+            String selector1Name, String property1Name, String selector2Name, String property2Name)
+            throws InvalidQueryException, RepositoryException {
         return delegate.equiJoinCondition(selector1Name, property1Name, selector2Name, property2Name);
     }
 
-    public SameNodeJoinCondition sameNodeJoinCondition(String selector1Name, String selector2Name, String selector2Path) throws InvalidQueryException, RepositoryException {
+    public SameNodeJoinCondition sameNodeJoinCondition(String selector1Name, String selector2Name, String selector2Path)
+            throws InvalidQueryException, RepositoryException {
         return delegate.sameNodeJoinCondition(selector1Name, selector2Name, selector2Path);
     }
 
-    public ChildNodeJoinCondition childNodeJoinCondition(String childSelectorName, String parentSelectorName) throws InvalidQueryException, RepositoryException {
+    public ChildNodeJoinCondition childNodeJoinCondition(String childSelectorName, String parentSelectorName)
+            throws InvalidQueryException, RepositoryException {
         return delegate.childNodeJoinCondition(childSelectorName, parentSelectorName);
     }
 
-    public DescendantNodeJoinCondition descendantNodeJoinCondition(String descendantSelectorName, String ancestorSelectorName) throws InvalidQueryException, RepositoryException {
+    public DescendantNodeJoinCondition descendantNodeJoinCondition(
+            String descendantSelectorName, String ancestorSelectorName)
+            throws InvalidQueryException, RepositoryException {
         return delegate.descendantNodeJoinCondition(descendantSelectorName, ancestorSelectorName);
     }
 
@@ -109,15 +122,19 @@ public class ProxyQueryObjectModelFactory extends ProxyWrapper<QueryObjectModelF
         return delegate.not(constraint);
     }
 
-    public Comparison comparison(DynamicOperand operand1, String operator, StaticOperand operand2) throws InvalidQueryException, RepositoryException {
+    public Comparison comparison(DynamicOperand operand1, String operator, StaticOperand operand2)
+            throws InvalidQueryException, RepositoryException {
         return delegate.comparison(operand1, operator, operand2);
     }
 
-    public PropertyExistence propertyExistence(String selectorName, String propertyName) throws InvalidQueryException, RepositoryException {
+    public PropertyExistence propertyExistence(String selectorName, String propertyName)
+            throws InvalidQueryException, RepositoryException {
         return delegate.propertyExistence(selectorName, propertyName);
     }
 
-    public FullTextSearch fullTextSearch(String selectorName, String propertyName, StaticOperand fullTextSearchExpression) throws InvalidQueryException, RepositoryException {
+    public FullTextSearch fullTextSearch(
+            String selectorName, String propertyName, StaticOperand fullTextSearchExpression)
+            throws InvalidQueryException, RepositoryException {
         return delegate.fullTextSearch(selectorName, propertyName, fullTextSearchExpression);
     }
 
@@ -129,11 +146,13 @@ public class ProxyQueryObjectModelFactory extends ProxyWrapper<QueryObjectModelF
         return delegate.childNode(selectorName, path);
     }
 
-    public DescendantNode descendantNode(String selectorName, String path) throws InvalidQueryException, RepositoryException {
+    public DescendantNode descendantNode(String selectorName, String path)
+            throws InvalidQueryException, RepositoryException {
         return delegate.descendantNode(selectorName, path);
     }
 
-    public PropertyValue propertyValue(String selectorName, String propertyName) throws InvalidQueryException, RepositoryException {
+    public PropertyValue propertyValue(String selectorName, String propertyName)
+            throws InvalidQueryException, RepositoryException {
         return delegate.propertyValue(selectorName, propertyName);
     }
 
@@ -149,7 +168,8 @@ public class ProxyQueryObjectModelFactory extends ProxyWrapper<QueryObjectModelF
         return delegate.nodeLocalName(selectorName);
     }
 
-    public FullTextSearchScore fullTextSearchScore(String selectorName) throws InvalidQueryException, RepositoryException {
+    public FullTextSearchScore fullTextSearchScore(String selectorName)
+            throws InvalidQueryException, RepositoryException {
         return delegate.fullTextSearchScore(selectorName);
     }
 
@@ -177,7 +197,8 @@ public class ProxyQueryObjectModelFactory extends ProxyWrapper<QueryObjectModelF
         return delegate.descending(operand);
     }
 
-    public Column column(String selectorName, String propertyName, String columnName) throws InvalidQueryException, RepositoryException {
+    public Column column(String selectorName, String propertyName, String columnName)
+            throws InvalidQueryException, RepositoryException {
         return delegate.column(selectorName, propertyName, columnName);
     }
 }

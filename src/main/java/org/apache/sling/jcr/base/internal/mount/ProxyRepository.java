@@ -18,11 +18,6 @@
  */
 package org.apache.sling.jcr.base.internal.mount;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import javax.jcr.Credentials;
 import javax.jcr.LoginException;
 import javax.jcr.NoSuchWorkspaceException;
@@ -31,6 +26,11 @@ import javax.jcr.RepositoryException;
 import javax.jcr.Session;
 import javax.jcr.SimpleCredentials;
 import javax.jcr.Value;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.jackrabbit.api.JackrabbitRepository;
 import org.apache.jackrabbit.api.JackrabbitSession;
@@ -46,7 +46,6 @@ public class ProxyRepository<T extends Repository> implements Repository {
         this.mount = mount;
         this.mountPoints = new HashSet<>(mountPoint);
     }
-
 
     @Override
     public String[] getDescriptorKeys() {
@@ -79,7 +78,8 @@ public class ProxyRepository<T extends Repository> implements Repository {
     }
 
     @Override
-    public Session login(Credentials credentials, String workspaceName) throws LoginException, NoSuchWorkspaceException, RepositoryException {
+    public Session login(Credentials credentials, String workspaceName)
+            throws LoginException, NoSuchWorkspaceException, RepositoryException {
         Session jcrSession = jcr.login(credentials, workspaceName);
 
         Session mountSession;
@@ -87,13 +87,12 @@ public class ProxyRepository<T extends Repository> implements Repository {
             Map<String, Object> attributes = new HashMap<>();
             attributes.put(RepositoryMount.PARENT_SESSION_KEY, jcrSession);
             mountSession = ((JackrabbitRepository) mount).login(credentials, workspaceName, attributes);
-        }
-        else {
+        } else {
             mountSession = mount.login(credentials, workspaceName);
         }
-        return jcrSession instanceof JackrabbitSession ?
-                new ProxyJackrabbitSession(this, (JackrabbitSession) jcrSession, mountSession, this.mountPoints) :
-                new ProxySession<>(this, jcrSession, mountSession, this.mountPoints);
+        return jcrSession instanceof JackrabbitSession
+                ? new ProxyJackrabbitSession(this, (JackrabbitSession) jcrSession, mountSession, this.mountPoints)
+                : new ProxySession<>(this, jcrSession, mountSession, this.mountPoints);
     }
 
     @Override
@@ -118,16 +117,25 @@ public class ProxyRepository<T extends Repository> implements Repository {
 
         Map<String, Object> attributes = new HashMap<>();
         attributes.put(RepositoryMount.PARENT_SESSION_KEY, session);
-        Session mountSession = ((JackrabbitRepository) mount).login(new SimpleCredentials(session.getUserID(), new char[0]),session.getWorkspace().getName(), attributes );
+        Session mountSession = ((JackrabbitRepository) mount)
+                .login(
+                        new SimpleCredentials(session.getUserID(), new char[0]),
+                        session.getWorkspace().getName(),
+                        attributes);
 
-        return session instanceof JackrabbitSession ?
-                new ProxyJackrabbitSession(this, (JackrabbitSession) session, mountSession, this.mountPoints) :
-                new ProxySession<>(this, session, mountSession, this.mountPoints);
+        return session instanceof JackrabbitSession
+                ? new ProxyJackrabbitSession(this, (JackrabbitSession) session, mountSession, this.mountPoints)
+                : new ProxySession<>(this, session, mountSession, this.mountPoints);
     }
 
     Session impersonate(Credentials credentials, Session jcr, Session mount) throws RepositoryException {
-        return jcr instanceof JackrabbitSession ?
-                new ProxyJackrabbitSession(this, (JackrabbitSession) jcr.impersonate(credentials), mount.impersonate(credentials), this.mountPoints) :
-                new ProxySession<>(this, jcr.impersonate(credentials), mount.impersonate(credentials), this.mountPoints);
+        return jcr instanceof JackrabbitSession
+                ? new ProxyJackrabbitSession(
+                        this,
+                        (JackrabbitSession) jcr.impersonate(credentials),
+                        mount.impersonate(credentials),
+                        this.mountPoints)
+                : new ProxySession<>(
+                        this, jcr.impersonate(credentials), mount.impersonate(credentials), this.mountPoints);
     }
 }

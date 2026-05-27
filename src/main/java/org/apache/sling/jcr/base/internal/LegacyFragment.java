@@ -22,14 +22,11 @@ import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.ConfigurationPolicy;
 
-/**
- * Legacy fragment configuration. Use {@link AllowListFragment} instead.
- */
+/** Legacy fragment configuration. Use {@link AllowListFragment} instead. */
 @Component(
         configurationPid = LegacyFragment.LEGACY_FACTORY_PID,
         configurationPolicy = ConfigurationPolicy.REQUIRE,
-        service = AllowListFragment.class
-)
+        service = AllowListFragment.class)
 public class LegacyFragment extends AllowListFragment {
 
     public static final String LEGACY_FACTORY_PID = "org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment";
@@ -42,12 +39,14 @@ public class LegacyFragment extends AllowListFragment {
         String[] whitelist_bundles();
     }
 
-
     @Activate
     public LegacyFragment(Configuration configuration) {
         super(configuration.whitelist_name(), configuration.whitelist_bundles());
-        LoginAdminAllowList.LOG.warn("Using deprecated factory configuration '{}' with whitelist.name='{}'. " +
-            "Update your configuration to use configuration '{}' instead.", 
-            LEGACY_FACTORY_PID, configuration.whitelist_name(), AllowListFragment.FACTORY_PID);
+        LoginAdminAllowList.LOG.warn(
+                "Using deprecated factory configuration '{}' with whitelist.name='{}'. "
+                        + "Update your configuration to use configuration '{}' instead.",
+                LEGACY_FACTORY_PID,
+                configuration.whitelist_name(),
+                AllowListFragment.FACTORY_PID);
     }
 }

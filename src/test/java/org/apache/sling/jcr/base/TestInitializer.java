@@ -24,9 +24,7 @@ import javax.jcr.Session;
 import org.apache.sling.jcr.api.SlingRepository;
 import org.apache.sling.jcr.api.SlingRepositoryInitializer;
 
-/** SlingRepositoryInitializer used to test that all initializers are
- *  called in the right order.
- */
+/** SlingRepositoryInitializer used to test that all initializers are called in the right order. */
 class TestInitializer implements SlingRepositoryInitializer {
 
     private final String id;
@@ -40,17 +38,17 @@ class TestInitializer implements SlingRepositoryInitializer {
 
     @Override
     public void processRepository(SlingRepository repo) throws Exception {
-        if(id.equals("EXCEPTION")) {
+        if (id.equals("EXCEPTION")) {
             throw new Exception("Failing due to id=" + id);
         }
-        if(id.equals("ERROR")) {
+        if (id.equals("ERROR")) {
             throw new Error("Erroring due to id=" + id);
         }
 
         final Session s = repo.loginAdministrative(null);
         try {
             Node n = null;
-            if(s.nodeExists(NODE_PATH)) {
+            if (s.nodeExists(NODE_PATH)) {
                 n = s.getNode(NODE_PATH);
             } else {
                 n = s.getRootNode().addNode(NODE_NAME);

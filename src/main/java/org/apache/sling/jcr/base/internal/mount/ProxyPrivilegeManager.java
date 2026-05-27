@@ -18,15 +18,15 @@
  */
 package org.apache.sling.jcr.base.internal.mount;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import javax.jcr.AccessDeniedException;
 import javax.jcr.NamespaceException;
 import javax.jcr.RepositoryException;
 import javax.jcr.security.AccessControlException;
 import javax.jcr.security.Privilege;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.apache.jackrabbit.api.security.authorization.PrivilegeManager;
 
@@ -55,7 +55,8 @@ public class ProxyPrivilegeManager extends ProxyWrapper<PrivilegeManager> implem
         }
     }
 
-    public Privilege registerPrivilege(String privilegeName, boolean isAbstract, String[] declaredAggregateNames) throws AccessDeniedException, NamespaceException, RepositoryException {
+    public Privilege registerPrivilege(String privilegeName, boolean isAbstract, String[] declaredAggregateNames)
+            throws AccessDeniedException, NamespaceException, RepositoryException {
         mount.registerPrivilege(privilegeName, isAbstract, declaredAggregateNames);
         return delegate.registerPrivilege(privilegeName, isAbstract, declaredAggregateNames);
     }

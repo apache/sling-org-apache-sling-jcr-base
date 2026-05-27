@@ -18,17 +18,13 @@
  */
 package org.apache.sling.jcr.base.internal;
 
-import static org.apache.sling.jcr.base.MockSlingRepositoryManager.ALLOWLIST_ALL;
-import static org.apache.sling.jcr.base.MockSlingRepositoryManager.ALLOWLIST_NONE;
-import static org.junit.Assert.assertEquals;
+import javax.jcr.LoginException;
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import javax.jcr.LoginException;
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 
 import org.apache.sling.jcr.api.SlingRepository;
 import org.apache.sling.jcr.base.AbstractSlingRepository2;
@@ -44,8 +40,13 @@ import org.mockito.Mockito;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
-/** Verify that the AbstractSlingRepository2 uses the login admin allow list,
- *  as well as its combination with the global "disable login admin" flag
+import static org.apache.sling.jcr.base.MockSlingRepositoryManager.ALLOWLIST_ALL;
+import static org.apache.sling.jcr.base.MockSlingRepositoryManager.ALLOWLIST_NONE;
+import static org.junit.Assert.assertEquals;
+
+/**
+ * Verify that the AbstractSlingRepository2 uses the login admin allow list, as well as its
+ * combination with the global "disable login admin" flag
  */
 @RunWith(Parameterized.class)
 public class AllowListWiringTest {
@@ -55,25 +56,26 @@ public class AllowListWiringTest {
     private final boolean managerAllowsLoginAdmin;
     private final boolean allowListAllowsLoginAdmin;
     private final boolean loginAdminExpected;
- 
-    @Parameters(name="manager {0}, allow list {1} -> {2}")
+
+    @Parameters(name = "manager {0}, allow list {1} -> {2}")
     public static Collection<Object[]> data() {
         final List<Object[]> result = new ArrayList<Object[]>();
-        result.add(new Object[] { false, false, false });
-        result.add(new Object[] { false, true, false });
-        result.add(new Object[] { true, false, false });
-        result.add(new Object[] { true, true, true});
+        result.add(new Object[] {false, false, false});
+        result.add(new Object[] {false, true, false});
+        result.add(new Object[] {true, false, false});
+        result.add(new Object[] {true, true, true});
         return result;
     }
 
-    public AllowListWiringTest(boolean managerAllowsLoginAdmin, boolean allowListAllowsLoginAdmin, boolean loginAdminExpected) {
+    public AllowListWiringTest(
+            boolean managerAllowsLoginAdmin, boolean allowListAllowsLoginAdmin, boolean loginAdminExpected) {
         this.managerAllowsLoginAdmin = managerAllowsLoginAdmin;
         this.allowListAllowsLoginAdmin = allowListAllowsLoginAdmin;
         this.loginAdminExpected = loginAdminExpected;
     }
-    
+
     @Before
-    public void setup() throws Exception  {
+    public void setup() throws Exception {
         BundleContext bundleContext = MockOsgi.newBundleContext();
         Bundle bundle = bundleContext.getBundle();
 
@@ -83,7 +85,7 @@ public class AllowListWiringTest {
                 new MockSlingRepositoryManager(MockJcr.newRepository(), !managerAllowsLoginAdmin, allowList);
 
         repoMgr.activate(bundleContext);
-        
+
         repository = new AbstractSlingRepository2(repoMgr, bundle) {
             @Override
             protected Session createAdministrativeSession(String workspace) throws RepositoryException {
@@ -96,7 +98,7 @@ public class AllowListWiringTest {
             }
         };
     }
-    
+
     @Test
     @SuppressWarnings("deprecation")
     public void testLoginAdmin() throws Exception {
@@ -104,10 +106,10 @@ public class AllowListWiringTest {
         try {
             repository.loginAdministrative(null);
             allowed = true;
-        } catch(LoginException ignored) {
+        } catch (LoginException ignored) {
             allowed = false;
         }
-        
+
         assertEquals(loginAdminExpected, allowed);
     }
 }

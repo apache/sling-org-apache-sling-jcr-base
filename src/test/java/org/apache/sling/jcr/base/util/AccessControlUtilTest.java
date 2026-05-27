@@ -18,13 +18,13 @@
  */
 package org.apache.sling.jcr.base.util;
 
+import javax.jcr.RepositoryException;
+import javax.jcr.Session;
+
+import org.apache.sling.testing.mock.jcr.MockJcr;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.apache.sling.testing.mock.jcr.MockJcr;
-
-import javax.jcr.RepositoryException;
-import javax.jcr.Session;
 
 public class AccessControlUtilTest {
 

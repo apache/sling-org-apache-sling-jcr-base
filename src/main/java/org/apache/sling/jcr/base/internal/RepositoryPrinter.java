@@ -18,17 +18,15 @@
  */
 package org.apache.sling.jcr.base.internal;
 
+import javax.jcr.Repository;
+
 import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.Map;
 
-import javax.jcr.Repository;
-
-/**
- * The Printer Plugin
- */
+/** The Printer Plugin */
 public class RepositoryPrinter {
 
     private final Repository repository;
@@ -37,9 +35,9 @@ public class RepositoryPrinter {
 
     public RepositoryPrinter(final Repository repo, final Map<String, Object> props) {
         this.repository = repo;
-        if ( repo.getDescriptor(Repository.REP_NAME_DESC) != null ) {
+        if (repo.getDescriptor(Repository.REP_NAME_DESC) != null) {
             name = "Repository " + repo.getDescriptor(Repository.REP_NAME_DESC);
-        } else  if ( props.get("name") != null ) {
+        } else if (props.get("name") != null) {
             name = "Repository " + props.get("name").toString();
         } else {
             this.name = "Repository @" + repo.hashCode();
@@ -79,7 +77,7 @@ public class RepositoryPrinter {
     private void writeEntry(final PrintWriter pw, final String key, final String value) {
         pw.print(key);
         pw.print(": ");
-        if ( value != null ) {
+        if (value != null) {
             pw.println(value);
         } else {
             pw.println("-");
