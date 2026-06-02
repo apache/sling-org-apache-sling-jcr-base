@@ -6,7 +6,7 @@
 
 This module is part of the [Apache Sling](https://sling.apache.org) project.
 
-The JCR base bundle provides JCR utility classes, base implementations for `SlingRepository`, login administrative allow-list enforcement, node type loading helpers, and support for repository mounts.
+The JCR base bundle provides JCR utility classes, base implementations for `SlingRepository`, login administrative allow-list enforcement, repository initializer execution, node type and namespace loading helpers, repository status printer support, and repository mount integration for JCR-based legacy access.
 
 # Build
 
@@ -24,6 +24,11 @@ mvn clean verify
 mvn test
 mvn test -Dtest=LoginAdminAllowListTest
 mvn test -Dtest=LoginAdminAllowListTest#testAllowList
+mvn test -Dtest=RepositoryInitializersTest
+```
+
+```bash
+mvn test jacoco:report
 ```
 
 # Code Quality
@@ -34,18 +39,25 @@ mvn apache-rat:check
 mvn spotless:apply
 ```
 
+```bash
+mvn javadoc:javadoc
+```
+
 # Requirements
 
 * Java 8 source/target
-* OSGi Declarative Services (`org.osgi.service.component.annotations`)
-* Optional Jackrabbit RMI support via `jackrabbit-jcr-rmi` (provided scope)
+* Maven build for an OSGi bundle (Sling bundle parent)
+* OSGi Declarative Services and Metatype annotations (`org.osgi.service.component.annotations`, `org.osgi.service.metatype.annotations`)
+* Optional Jackrabbit RMI support via `jackrabbit-jcr-rmi` (provided scope, optional package import)
 
 # Main Components
 
 * `AbstractSlingRepository2` and `AbstractSlingRepositoryManager` provide the core Sling repository base implementation and lifecycle integration.
-* `LoginAdminAllowList`, `AllowListFragment`, and `LegacyFragment` enforce and bridge `loginAdministrative` allow-list configuration.
+* `LoginAdminAllowList`, `AllowListFragment`, and `LegacyFragment` enforce and bridge `loginAdministrative` allow-list configuration across modern and legacy property names.
+* `SlingRepositoryInitializer` services are tracked and executed during repository startup, ordered by OSGi service ranking.
 * `NodeTypeLoader` and `internal.loader.Loader` register CND node types and JCR namespaces from bundle headers.
-* `org.apache.sling.jcr.base.spi.RepositoryMount` and the internal proxy classes support JCR repository mounts.
+* `org.apache.sling.jcr.base.spi.RepositoryMount` and the internal proxy classes support JCR repository mounts through a single active mount selected by service ranking.
+* `internal.RepositoryPrinterProvider` and `internal.RepositoryPrinter` expose repository information to the Felix Web Console.
 * `util.AccessControlUtil` and `util.RepositoryAccessor` provide reusable JCR access-control and repository lookup utilities.
 
 # Project Structure
@@ -66,6 +78,11 @@ Current configuration uses allow-list naming:
 
 Legacy whitelist PIDs and properties are still supported for backward compatibility, but they are deprecated.
 
+Also supported for backward compatibility:
+
+* Legacy main PID: `org.apache.sling.jcr.base.internal.LoginAdminWhitelist`
+* Legacy fragment factory PID: `org.apache.sling.jcr.base.internal.LoginAdminWhitelist.fragment`
+
 # Repository Mount
 
 Apache Sling provides support for pluggable resource providers. While this allows for a very flexible and efficient
@@ -79,6 +96,8 @@ itself with the service registration property *RepositoryMount.MOUNT_POINTS_KEY*
 the paths in the JCR tree where the mount takes over the control of the JCR nodes. The *RepositoryMount* can be registered
 at a single path or multiple.
 
+The JCR base implementation uses a single active mount. If multiple `RepositoryMount` services are available, the one with the highest OSGi service ranking is used.
+
 As *RepositoryMount* extends *JackrabbitRepository* the implementation of a mount needs to implement the whole JCR API.
 This is a lot of work compared to a *ResourceProvider*, therefore a *RepositoryMount* should only be used if legacy
 code using JCR API needs to be supported.
@@ -89,3 +108,9 @@ When present, the following bundle manifest headers are processed to register re
 
 * `Sling-Nodetypes`
 * `Sling-Namespaces`
+
+# Repository Initializers
+
+Services implementing `org.apache.sling.jcr.api.SlingRepositoryInitializer` are executed at repository startup before the repository service is registered.
+
+If an initializer throws an exception or error, repository service registration is aborted.
