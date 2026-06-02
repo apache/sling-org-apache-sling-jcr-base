@@ -107,3 +107,10 @@ target/                          Build output (gitignored)
 - **Baseline check**: the parent POM runs OSGi semantic-version baseline against the previous release JAR. Adding API without bumping the package version will fail the build.
 - **Spotless must pass before RAT**: run `mvn spotless:apply` before committing; otherwise the RAT XML-header check may report false positives on reformatted files.
 - The `internal` packages are deliberately excluded from Javadoc generation (see `pom.xml` `maven-javadoc-plugin` config).
+
+# Security
+
+<!-- sling-security-default:start -->
+The threat model for this project is https://github.com/apache/sling/blob/master/docs/threat-model.md .
+<!-- sling-security-default:end -->
+
