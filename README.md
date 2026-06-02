@@ -6,7 +6,65 @@
 
 This module is part of the [Apache Sling](https://sling.apache.org) project.
 
-The JCR base bundle provides JCR utility classes and support for repository mounts.
+The JCR base bundle provides JCR utility classes, base implementations for `SlingRepository`, login administrative allow-list enforcement, node type loading helpers, and support for repository mounts.
+
+# Build
+
+```bash
+mvn clean package -DskipTests
+```
+
+# Test
+
+```bash
+mvn clean verify
+```
+
+```bash
+mvn test
+mvn test -Dtest=LoginAdminAllowListTest
+mvn test -Dtest=LoginAdminAllowListTest#testAllowList
+```
+
+# Code Quality
+
+```bash
+mvn spotless:check
+mvn apache-rat:check
+mvn spotless:apply
+```
+
+# Requirements
+
+* Java 8 source/target
+* OSGi Declarative Services (`org.osgi.service.component.annotations`)
+* Optional Jackrabbit RMI support via `jackrabbit-jcr-rmi` (provided scope)
+
+# Main Components
+
+* `AbstractSlingRepository2` and `AbstractSlingRepositoryManager` provide the core Sling repository base implementation and lifecycle integration.
+* `LoginAdminAllowList`, `AllowListFragment`, and `LegacyFragment` enforce and bridge `loginAdministrative` allow-list configuration.
+* `NodeTypeLoader` and `internal.loader.Loader` register CND node types and JCR namespaces from bundle headers.
+* `org.apache.sling.jcr.base.spi.RepositoryMount` and the internal proxy classes support JCR repository mounts.
+* `util.AccessControlUtil` and `util.RepositoryAccessor` provide reusable JCR access-control and repository lookup utilities.
+
+# Project Structure
+
+* `src/main/java` - bundle implementation and SPI
+* `src/test/java` - JUnit 4 + Sling testing mocks
+* `pom.xml` - Maven build (Sling bundle parent)
+* `bnd.bnd` - OSGi manifest instructions
+
+# Login Administrative Allow List
+
+`loginAdministrative` is protected by an allow list and is disabled unless both repository-manager settings and allow-list rules permit access.
+
+Current configuration uses allow-list naming:
+
+* Main PID: `org.apache.sling.jcr.base.LoginAdminAllowList`
+* Fragment factory PID: `org.apache.sling.jcr.base.LoginAdminAllowList.fragment`
+
+Legacy whitelist PIDs and properties are still supported for backward compatibility, but they are deprecated.
 
 # Repository Mount
 
@@ -18,9 +76,16 @@ a resource provider.
 To support legacy code, this bundle provides an SPI interface *org.apache.sling.jcr.base.spi.RepositoryMount* which
 extends *JackrabbitRepository* (and through this *javax.jcr.Repository*). A service registered as *RepositoryMount* registers
 itself with the service registration property *RepositoryMount.MOUNT_POINTS_KEY* which is a String+ property containing
-the paths in the JCR tree where the mount takes over the control of the JCR nodes. The *RepositoryMount* can registered
+the paths in the JCR tree where the mount takes over the control of the JCR nodes. The *RepositoryMount* can be registered
 at a single path or multiple.
 
 As *RepositoryMount* extends *JackrabbitRepository* the implementation of a mount needs to implement the whole JCR API.
 This is a lot of work compared to a *ResourceProvider*, therefore a *RepositoryMount* should only be used if legacy
 code using JCR API needs to be supported.
+
+# Node Types and Namespaces
+
+When present, the following bundle manifest headers are processed to register repository metadata:
+
+* `Sling-Nodetypes`
+* `Sling-Namespaces`
