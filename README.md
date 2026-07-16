@@ -6,7 +6,7 @@
 
 This module is part of the [Apache Sling](https://sling.apache.org) project.
 
-The JCR base bundle provides JCR utility classes, base implementations for `SlingRepository`, login administrative allow-list enforcement, repository initializer execution, node type and namespace loading helpers, repository status printer support, and repository mount integration for JCR-based legacy access.
+The JCR base bundle provides JCR utility classes, base implementations for `SlingRepository`, `loginAdministrative` allow-list enforcement, repository initializer execution, node type and namespace loading helpers, repository status printer support, and repository mount integration for JCR-based legacy access.
 
 # Build
 
@@ -25,6 +25,9 @@ mvn test
 mvn test -Dtest=LoginAdminAllowListTest
 mvn test -Dtest=LoginAdminAllowListTest#testAllowList
 mvn test -Dtest=RepositoryInitializersTest
+mvn test -Dtest=RepositoryMountTest
+mvn test -Dtest=NodeTypeLoaderTest
+mvn test -Dtest=AccessControlUtilTest
 ```
 
 ```bash
@@ -49,6 +52,7 @@ mvn javadoc:javadoc
 * Maven build for an OSGi bundle (Sling bundle parent)
 * OSGi Declarative Services and Metatype annotations (`org.osgi.service.component.annotations`, `org.osgi.service.metatype.annotations`)
 * Optional Jackrabbit RMI support via `jackrabbit-jcr-rmi` (provided scope, optional package import)
+* JUnit 4 with Sling OSGi/Sling/JCR mock test tooling and Mockito for tests
 
 # Main Components
 
@@ -62,8 +66,8 @@ mvn javadoc:javadoc
 
 # Project Structure
 
-* `src/main/java` - bundle implementation and SPI
-* `src/test/java` - JUnit 4 + Sling testing mocks
+* `src/main/java/org/apache/sling/jcr/base` - bundle implementation, internal services, SPI, and utility classes
+* `src/test/java` - JUnit 4 tests mirroring package structure with Sling testing mocks
 * `pom.xml` - Maven build (Sling bundle parent)
 * `bnd.bnd` - OSGi manifest instructions
 
@@ -114,3 +118,9 @@ When present, the following bundle manifest headers are processed to register re
 Services implementing `org.apache.sling.jcr.api.SlingRepositoryInitializer` are executed at repository startup before the repository service is registered.
 
 If an initializer throws an exception or error, repository service registration is aborted.
+
+# Security
+
+This module follows the Apache Sling threat model:
+
+https://github.com/apache/sling/blob/master/docs/threat-model.md
