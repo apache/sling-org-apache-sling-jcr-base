@@ -28,6 +28,8 @@ mvn test -Dtest=RepositoryInitializersTest
 mvn test -Dtest=RepositoryMountTest
 mvn test -Dtest=NodeTypeLoaderTest
 mvn test -Dtest=AccessControlUtilTest
+mvn test -Dtest=AllowListWiringTest
+mvn test -Dtest=LegacyFragmentTest
 
 # Lint / code style (Spotless + RAT)
 mvn spotless:check
@@ -60,16 +62,23 @@ src/
       LegacyFragment.java              Compatibility shim for old allow-list configs
       RepositoryPrinter*.java          Felix WebConsole status printer provider + printer
       loader/Loader.java               Bootstraps node types from bundle resources
-      mount/Proxy*.java                Proxy wrappers for RepositoryMount SPI
+      mount/Proxy*.java                Proxy wrappers for RepositoryMount SPI (repository/session/node/query/security/user management)
       mount/ChainedIterator.java       Iterator utility for mount proxy traversal
     spi/
       RepositoryMount.java             SPI: plug in an additional JCR repository
+      package-info.java                SPI package version annotation
     util/
       AccessControlUtil.java           JCR/Jackrabbit ACL helpers
       RepositoryAccessor.java          Repository lookup (JNDI / RMI / OSGi)
+      package-info.java                Utility package version annotation
   test/java/…                          JUnit 4 tests mirroring the main package tree
     RepositoryInitializersTest.java    Verifies SlingRepositoryInitializer ordering/failure behavior
+    RepositoryMountTest.java           Verifies mount registration lifecycle and delegation behavior
+    NodeTypeLoaderTest.java            Verifies built-in node type and namespace loading behavior
     internal/AllowListWiringTest.java  Verifies allow-list wiring across modern + legacy configs
+    internal/LegacyFragmentTest.java   Verifies legacy allow-list fragment compatibility behavior
+    internal/LoginAdminAllowListTest.java  Verifies loginAdministrative allow-list enforcement behavior
+    util/AccessControlUtilTest.java    Verifies ACL utility behavior against mock JCR sessions
 target/                          Build output (gitignored)
 ```
 
@@ -86,6 +95,7 @@ target/                          Build output (gitignored)
 - The `bnd.bnd` file declares `Import-Package` overrides (e.g., optional RMI import). Keep it in sync when adding new optional dependencies.
 - Repository initializer execution order follows OSGi service ranking (`SlingRepositoryInitializer` with higher ranking runs first).
 - Mount integration uses one active `RepositoryMount`; if multiple services exist, highest OSGi service ranking wins.
+- Keep test dependencies aligned with current harness versions in `pom.xml` (`osgi-mock.junit4` 3.3.8, `sling-mock.junit4` 3.4.10, `jcr-mock` 1.6.10, Mockito 5.x).
 
 # Git Workflow
 
@@ -107,12 +117,14 @@ target/                          Build output (gitignored)
 - `AccessControlUtilTest` validates reflective ACL access helper behavior against mock JCR sessions.
 - Run coverage: `mvn test jacoco:report` (JaCoCo is inherited from the Sling bundle parent POM)
 - Coverage report appears in `target/site/jacoco/`
+- Current Surefire reports are generated under `target/surefire-reports/` for the focused test classes listed above.
 
 # Gotchas
 
 - **`loginAdministrative` is off by default**: bundles must register an `AllowListFragment` OSGi service to be permitted. Tests that call `loginAdministrative` without wiring the allow-list will get an exception.
 - **Allow-list configuration names changed from "whitelist" to "allowlist"**: modern PIDs/properties are preferred, while legacy whitelist naming is still supported for compatibility.
 - **OSGi mock version matters**: the tests use `osgi-mock.junit4` 3.x; mixing with 2.x artefacts breaks context setup.
+- **`org.osgi.util.converter` is required at build/runtime wiring level**: keep the provided dependency and OSGi imports intact when updating OSGi-related code.
 - **RMI dependency is optional**: `jackrabbit-jcr-rmi` is `provided` scope and the Import-Package is `resolution:=optional`. Do not make it mandatory.
 - **Repository startup is blocked on initializer failures**: exceptions/errors from `SlingRepositoryInitializer` prevent SlingRepository service registration.
 - **Only one repository mount is active at a time**: mount service selection follows OSGi ranking, so tests and debugging should account for service ordering.

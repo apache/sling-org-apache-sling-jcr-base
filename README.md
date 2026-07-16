@@ -28,6 +28,8 @@ mvn test -Dtest=RepositoryInitializersTest
 mvn test -Dtest=RepositoryMountTest
 mvn test -Dtest=NodeTypeLoaderTest
 mvn test -Dtest=AccessControlUtilTest
+mvn test -Dtest=AllowListWiringTest
+mvn test -Dtest=LegacyFragmentTest
 ```
 
 ```bash
@@ -51,13 +53,14 @@ mvn javadoc:javadoc
 * Java 8 source/target
 * Maven build for an OSGi bundle (Sling bundle parent)
 * OSGi Declarative Services and Metatype annotations (`org.osgi.service.component.annotations`, `org.osgi.service.metatype.annotations`)
+* OSGi Converter API (`org.osgi.util.converter`) available at build/runtime wiring level
 * Optional Jackrabbit RMI support via `jackrabbit-jcr-rmi` (provided scope, optional package import)
 * JUnit 4 with Sling OSGi/Sling/JCR mock test tooling and Mockito for tests
 
 # Main Components
 
 * `AbstractSlingRepository2` and `AbstractSlingRepositoryManager` provide the core Sling repository base implementation and lifecycle integration.
-* `LoginAdminAllowList`, `AllowListFragment`, and `LegacyFragment` enforce and bridge `loginAdministrative` allow-list configuration across modern and legacy property names.
+* `LoginAdminAllowList`, `LoginAdminAllowListConfiguration`, `AllowListFragment`, and `LegacyFragment` enforce and bridge `loginAdministrative` allow-list configuration across modern and legacy property names.
 * `SlingRepositoryInitializer` services are tracked and executed during repository startup, ordered by OSGi service ranking.
 * `NodeTypeLoader` and `internal.loader.Loader` register CND node types and JCR namespaces from bundle headers.
 * `org.apache.sling.jcr.base.spi.RepositoryMount` and the internal proxy classes support JCR repository mounts through a single active mount selected by service ranking.
